@@ -1,14 +1,12 @@
 node_modules/
+.env
 
-# Ignore TypeScript build outputs (JavaScript files and maps)
 dist/
 build/
 out/
 
-# Ignore TS compilation cache
 *.tsbuildinfo
 
-# Ignore production build files
 *.js
 *.js.map
 *.d.ts
