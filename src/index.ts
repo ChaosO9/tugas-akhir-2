@@ -33,6 +33,10 @@ const router = Router();
 
 router.get("/process-data", main);
 
+router.get("/hello", (req: Request, res: Response) => {
+    res.send("Hello from the server!");
+});
+
 app.use("/api/v1", router);
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
