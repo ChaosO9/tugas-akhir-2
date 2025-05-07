@@ -7,14 +7,32 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch Program",
+            "name": "Launch Program - Agent Service",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${file}",
+            "program": "${workspaceFolder}\\agent-service\\dist\\src\\services\\debug-main-2.js",
+            "console": "integratedTerminal",
             "outFiles": [
-                "${workspaceFolder}/**/*.js"
-            ]
+                "${workspaceFolder}/agent-service/dist/src/**/*.js"
+            ],
+            // "preLaunchTask": "tsc: build - agent-service/tsconfig.json",
+            "envFile": "${workspaceFolder}\\agent-service\\.env",
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Program - Sender Service",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\sender-service\\dist\\senderTest.js",
+            "console": "integratedTerminal",
+            "outFiles": [
+                "${workspaceFolder}/sender-service/dist/**/*.js"
+            ],
+            // "preLaunchTask": "tsc: build - agent-service/tsconfig.json",
+            "envFile": "${workspaceFolder}\\sender-service\\.env",
         },
         {
             "name": "Debug Jest Tests",
@@ -48,6 +66,22 @@
             "outFiles": [
                 "${workspaceFolder}/dist/**/*.js"
             ]
+        },
+        {
+            "name": "Docker: Attach to Node", // Choose a descriptive name
+            "type": "node", // Debugger type
+            "request": "attach", // We are attaching to an existing process
+            "port": 9229, // The HOST port you mapped in docker-compose.yml
+            "address": "localhost", // Connect to localhost on the host machine
+            "localRoot": "${workspaceFolder}", // Root directory of your project on the HOST
+            "remoteRoot": "/app", // The working directory INSIDE the container (adjust if different, e.g., /usr/src/app)
+            "restart": true, // Automatically try to re-attach if disconnected
+            "skipFiles": [
+                // Optional: Skip stepping into node internals or node_modules
+                "<node_internals>/**",
+                "${workspaceFolder}/node_modules/**"
+            ]
+            // "sourceMaps": true // Usually default, but ensure TS generates source maps
         }
     ]
 }
