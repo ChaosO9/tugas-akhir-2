@@ -3,7 +3,7 @@
     "tasks": [
         {
             "type": "typescript",
-            "tsconfig": "tsconfig.json",
+            "tsconfig": "agent-service/tsconfig.json",
             "option": "watch",
             "problemMatcher": [
                 "$tsc-watch"
@@ -12,7 +12,20 @@
                 "kind": "build",
                 "isDefault": true
             },
-            "label": "tsc: watch - tsconfig.json"
+            "label": "tsc: watch - agent-service/tsconfig.json"
+        },
+        {
+            "type": "typescript",
+            "tsconfig": "sender-service/tsconfig.json",
+            "option": "watch",
+            "problemMatcher": [
+                "$tsc-watch"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "label": "tsc: watch - sender-service/tsconfig.json"
         }
     ]
 }
