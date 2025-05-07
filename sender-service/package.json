@@ -1,18 +1,28 @@
 {
-  "name": "app",
-  "version": "1.0.50",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun run --watch src/index.ts"
-  },
-  "dependencies": {
-    "bee-queue": "^1.7.1",
-    "dockerode": "^4.0.4",
-    "elysia": "latest",
-    "redis": "^4.7.0"
-  },
-  "devDependencies": {
-    "bun-types": "latest"
-  },
-  "module": "src/index.js"
+    "name": "app",
+    "version": "1.0.50",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "dev": "bun run --watch src/index.ts",
+        "start:sender": "ts-node src/sender.ts",
+        "publish:job": "ts-node src/publisher.ts",
+        "build": "tsc",
+        "start:sender:prod": "node dist/sender.js",
+        "debug": "bun run --watch --inspect=0.0.0.0:9229 src/index.ts"
+    },
+    "dependencies": {
+        "axios": "^1.8.4",
+        "bee-queue": "^1.7.1",
+        "dockerode": "^4.0.4",
+        "dotenv": "^16.5.0",
+        "node-cache": "^5.1.2",
+        "pg": "^8.14.1",
+        "redis": "^4.7.0",
+        "ts-node": "^10.9.2"
+    },
+    "devDependencies": {
+        "@types/pg": "^8.11.13",
+        "bun-types": "latest"
+    },
+    "module": "src/index.js"
 }

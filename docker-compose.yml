@@ -1,0 +1,58 @@
+services:
+  redis-server:
+    image: redis:7-alpine
+    container_name: redis_server
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+    networks:
+      - app_network
+    restart: always
+
+  sender-service:
+    build:
+      context: ./sender-service
+      dockerfile: Dockerfile
+    container_name: sender_service_app
+    depends_on:
+      - redis-server
+    env_file:
+      - ./sender-service/.env
+    environment:
+      - NODE_ENV=production
+      - REDIS_URL=redis://redis-server:6379
+      - JOB_CHANNEL=job-channel
+    volumes:
+      - job_files_volume:/app/job_files
+    networks:
+      - app_network
+    restart: always
+
+  agent-service:
+    build:
+      context: ./agent-service
+      dockerfile: Dockerfile
+    container_name: agent_service_app
+    depends_on:
+      - redis-server
+    environment:
+      - NODE_ENV=production
+      - REDIS_URL=redis://redis-server:6379
+      - JOB_CHANNEL=job-channel
+      - OUTPUT_DIR=/app/job_files
+      - ORGANIZATION_ID=YOUR_ORGANIZATION_ID_HERE
+    ports:
+      - "3000:3000"
+    volumes:
+      - job_files_volume:/app/job_files
+    networks:
+      - app_network
+    restart: always
+
+volumes:
+  redis_data: {}
+  job_files_volume: {}
+
+networks:
+  app_network:
+    driver: bridge
