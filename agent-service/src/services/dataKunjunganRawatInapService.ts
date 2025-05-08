@@ -1,4 +1,5 @@
 import dapatkanDataKunjunganRawatInap from "../repositories/pendaftaranKunjunganRawatInap";
+import { dateTimeToUTC } from "../utils/dateTimeToUTC";
 import { formatDateToISO } from "../utils/functions";
 import { KunjunganRawatInap } from "../utils/interface";
 import {
@@ -53,7 +54,7 @@ export default async function dataKunjunganRawatInapService(
                 },
             ],
             period: {
-                start: `${dataMasterPasien.period_start}`,
+                start: `${dateTimeToUTC(dataMasterPasien.period_start)}`,
             },
             location: [
                 {
@@ -139,8 +140,11 @@ export default async function dataKunjunganRawatInapService(
             conditions.map((conditionItem, index) => ({
                 condition: {
                     reference:
-                        "urn:uuid:" + String(conditionItem.diagnosapasien_uuid),
-                    display: String(conditionItem.icd_nama),
+                        "urn:uuid:" +
+                        String(conditionItem.condition[index].condition_uuid),
+                    display: String(
+                        conditionItem.condition[index].condition_nama,
+                    ),
                 },
                 use: {
                     coding: [
