@@ -1,42 +1,50 @@
-import { KunjunganRawatInap } from "./interface";
+import * as fsPromises from "fs/promises";
 import path from "path";
+import { KunjunganRawatInap } from "./interface";
+import { format } from "date-fns";
+import AppError from "./errorHandler";
 
-const fs = require("fs");
+const OUTPUT_BASE_DIR =
+    process.env.OUTPUT_DIR || path.join(__dirname, "..", "..", "app/job_files");
 
-export function writeJSONBundlePasien(
-    jsonContent: Object,
+export async function writeJSONBundlePasien(
+    jsonData: any,
     dataMasterPasien: KunjunganRawatInap,
-) {
-    fs.writeFile(
-        `${dataMasterPasien.patient_id}_${dataMasterPasien.encounter_id}.json`,
-        jsonContent,
-        (err: Error) => {
-            if (err) {
-                console.error(
-                    `Error menulis file ${dataMasterPasien.patient_id}_${dataMasterPasien.encounter_id}.json:`,
-                    err,
-                );
-            } else {
-                console.log(
-                    `File ${dataMasterPasien.patient_id}._${dataMasterPasien.encounter_id} berhasil dibuat.`,
-                );
-            }
-        },
-    );
+    filename?: string,
+): Promise<void> {
+    try {
+        await fsPromises.mkdir(OUTPUT_BASE_DIR, { recursive: true });
+
+        const finalFilename =
+            filename ||
+            `${dataMasterPasien.patient_id}_${dataMasterPasien.encounter_id}_${format(new Date(), "yyyyMMdd")}_NEW.json`;
+        const filePath = path.join(OUTPUT_BASE_DIR, finalFilename);
+
+        const jsonString = JSON.stringify(jsonData, null, 2); // Pretty print
+
+        await fsPromises.writeFile(filePath, jsonString, "utf8");
+    } catch (error) {
+        console.error(`Error writing JSON file ${filename}:`, error);
+        throw new AppError(
+            `Failed to write bundle file ${filename}: ${error instanceof Error ? error.message : String(error)}`,
+            500,
+        );
+    }
 }
 
+// Keep the writeJSON function as is, or update it similarly if needed
 export async function writeJSON(
     jsonData: any | any[],
     fileName: string,
 ): Promise<void> {
-    const filePath = path.join(
-        __dirname,
-        "../../json/patient",
-        `${fileName}.json`,
-    );
+    // This function already writes to a specific sub-directory ('json/patient')
+    // You might want to make this configurable too, potentially relative to OUTPUT_BASE_DIR
+    const specificOutputDir = path.join(OUTPUT_BASE_DIR, "json", "patient");
+    const filePath = path.join(specificOutputDir, `${fileName}.json`);
 
     try {
-        await fs.promises.writeFile(
+        await fsPromises.mkdir(specificOutputDir, { recursive: true }); // Ensure dir exists
+        await fsPromises.writeFile(
             filePath,
             JSON.stringify(jsonData, null, 2),
             "utf8",
