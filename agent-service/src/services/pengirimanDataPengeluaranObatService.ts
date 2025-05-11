@@ -162,8 +162,8 @@ export default async function pengirimanDataPengeluaranObat(
                         ],
                     },
                     medicationReference: {
-                        reference: `Medication/${medDisItem.medicationRequest_uuid}`,
-                        display: medDisItem.medicationReference_display,
+                        reference: `Medication/${medDisItem.medicationrequest_uuid}`,
+                        display: medDisItem.medicationreference_display,
                     },
                     subject: {
                         reference: `Patient/${medDisItem.patient_id}`,
@@ -184,12 +184,12 @@ export default async function pengirimanDataPengeluaranObat(
                         reference: `Location/${dataMasterPasien.location_poli_id}`,
                         display: LocationName,
                     },
-                    authorizingPrescription: [
-                        {
-                            reference:
-                                "MedicationRequest/{{MedicationRequest_FurosemideDay1}}",
-                        },
-                    ],
+                    // authorizingPrescription: [
+                    //     {
+                    //         reference:
+                    //             "MedicationRequest/{{MedicationRequest_FurosemideDay1}}",
+                    //     },
+                    // ],
                     quantity: {
                         value: 1,
                         system: "http://terminology.hl7.org/CodeSystem/v3-orderableDrugForm",
@@ -205,7 +205,7 @@ export default async function pengirimanDataPengeluaranObat(
                     whenHandedOver: "2022-12-25T14:30:00+00:00",
                     dosageInstruction: [
                         {
-                            sequence: medDisItem.dosageInstruction_sequence,
+                            sequence: medDisItem.dosageinstruction_sequence,
                             // additionalInstruction: [
                             //     {
                             //         coding: [
@@ -218,82 +218,82 @@ export default async function pengirimanDataPengeluaranObat(
                             //     },
                             // ],
                             // patientInstruction: "1 tablet per hari",
-                            ...(medDisItem.dosageInstruction_sequence_timing_repeat_frequency && {
+                            ...(medDisItem.dosageinstruction_sequence_timing_repeat_frequency && {
                                 timing: {
                                     repeat: {
                                         frequency:
-                                            medDisItem.dosageInstruction_sequence_timing_repeat_frequency,
-                                        period: medDisItem.dosageInstruction_sequence_timing_repeat_period,
+                                            medDisItem.dosageinstruction_sequence_timing_repeat_frequency,
+                                        period: medDisItem.dosageinstruction_sequence_timing_repeat_period,
                                         periodUnit:
-                                            medDisItem.dosageInstruction_sequence_timing_repeat_periodUnit,
+                                            medDisItem.dosageinstruction_sequence_timing_repeat_periodunit,
                                     },
                                 },
                             }),
-                            ...(medDisItem.dosageInstruction_route_coding_code && {
+                            ...(medDisItem.dosageinstruction_route_coding_code && {
                                 route: {
                                     coding: [
                                         {
-                                            system: medDisItem.dosageInstruction_route_coding_system,
-                                            code: medDisItem.dosageInstruction_route_coding_code,
+                                            system: medDisItem.route_coding_system,
+                                            code: medDisItem.dosageinstruction_route_coding_code,
                                             display:
-                                                medDisItem.dosageInstruction_route_coding_display,
+                                                medDisItem.dosageinstruction_route_coding_display,
                                         },
                                     ],
                                 },
                             }),
                             doseAndRate: [
                                 {
-                                    ...(medDisItem.dosageInstruction_doseAndRate_type_coding_code && {
+                                    ...(medDisItem.dosageinstruction_doseandrate_type_coding_code && {
                                         type: {
                                             coding: [
                                                 {
-                                                    system: medDisItem.dosageInstruction_doseAndRate_type_coding_system,
-                                                    code: medDisItem.dosageInstruction_doseAndRate_type_coding_code,
+                                                    system: medDisItem.dosageinstruction_doseandrate_type_coding_system,
+                                                    code: medDisItem.dosageinstruction_doseandrate_type_coding_code,
                                                     display:
-                                                        medDisItem.dosageInstruction_doseAndRate_type_coding_display,
+                                                        medDisItem.dosageinstruction_doseandrate_type_coding_display,
                                                 },
                                             ],
                                         },
                                     }),
                                     doseQuantity: {
                                         // value: medDisItem.dosageInstruction_doseQuantity_value,
-                                        unit: medDisItem.dosageInstruction_doseAndRate_doseQuantity_unit,
-                                        system: medDisItem.dosageInstruction_doseAndRate_doseQuantity_system,
-                                        code: medDisItem.dosageInstruction_doseAndRate_doseQuantity_code,
+                                        unit: medDisItem.dosageinstruction_doseandrate_dosequantity_unit,
+                                        system: medDisItem.dosageinstruction_doseandrate_dosequantity_system,
+                                        code: medDisItem.dosageinstruction_doseandrate_dosequantity_code,
                                     },
                                 },
                             ],
-                            text: medDisItem.dosageInstruction_text,
+                            text: medDisItem.dosageinstruction_text,
                         },
                     ],
                     dispenseRequest: {
-                        ...(medDisItem.dispenseRequest_dispenseInterval_value && {
+                        ...(medDisItem.dispenserequest_dispenseinterval_value && {
                             dispenseInterval: {
-                                value: medDisItem.dispenseRequest_dispenseInterval_value,
-                                unit: medDisItem.dispenseRequest_dispenseInterval_unit,
-                                system: medDisItem.dispenseRequest_dispenseInterval_system,
-                                code: medDisItem.dispenseRequest_dispenseInterval_code,
+                                value: medDisItem.dispenserequest_dispenseinterval_value,
+                                unit: medDisItem.dispenserequest_dispenseinterval_unit,
+                                system: medDisItem.dispenserequest_dispenseinterval_system,
+                                code: medDisItem.dispenserequest_dispenseinterval_code,
                             },
                         }),
-                        ...(medDisItem.dispenseRequest_quantity_unit && {
+                        ...(medDisItem.dispenserequest_quantity_unit && {
                             quantity: {
-                                value: medDisItem.dispenseRequest_quantity_value,
-                                unit: medDisItem.dispenseRequest_quantity_unit,
-                                system: medDisItem.dispenseRequest_quantity_system,
-                                code: medDisItem.dispenseRequest_quantity_code,
+                                value: medDisItem.dispenserequest_quantity_value,
+                                unit: medDisItem.dispenserequest_quantity_unit,
+                                system: medDisItem.dispenserequest_quantity_system,
+                                code: medDisItem.dispenserequest_quantity_code,
                             },
                         }),
                         expectedSupplyDuration: {
-                            value: medDisItem.dispenseRequest_expectedSupplyDuration_value,
-                            unit: medDisItem.dispenseRequest_expectedSupplyDuration_unit,
-                            system: medDisItem.dispenseRequest_expectedSupplyDuration_system,
-                            code: medDisItem.dispenseRequest_expectedSupplyDuration_code,
+                            value: medDisItem.dispenserequest_expectedsupplyduration_value,
+                            unit: medDisItem.dispenserequest_expectedsupplyduration_unit,
+                            system: medDisItem.dispenserequest_expectedsupplyduration_system,
+                            code: medDisItem.dispenserequest_expectedsupplyduration_code,
                         },
-                        ...(medDisItem.dispenseRequest_validityPeriod_start &&
-                            medDisItem.dispenseRequest_validityPeriod_end && {
+                        ...(medDisItem.dispenserequest_validityperiod_start &&
+                            medDisItem.dispenserequest_validityperiod_end && {
                                 validityPeriod: {
-                                    start: medDisItem.dispenseRequest_validityPeriod_start,
-                                    end: medDisItem.dispenseRequest_validityPeriod_end,
+                                    start: medDisItem.dispenserequest_validityperiod_start,
+                                    end: medDisItem.dispenserequest_validityperiod_end,
                                 },
                             }),
                     },
