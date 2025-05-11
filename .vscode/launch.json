@@ -35,6 +35,30 @@
             "envFile": "${workspaceFolder}\\sender-service\\.env",
         },
         {
+            "name": "Debug serviceTest.test.ts",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/agent-service/node_modules/jest/bin/jest.js",
+            "args": [
+                "src/__tests__/serviceTest.test.ts",
+                "--runInBand",
+                "--detectOpenHandles"
+                // If agent-service has a specific jest.config.js that's not in its root,
+                // or not automatically picked up, you might need:
+                // "--config", "path/to/your/jest.config.js"
+            ],
+            "runtimeArgs": [
+                "--inspect-brk"
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "cwd": "${workspaceFolder}/agent-service", // Set the Current Working Directory
+            "envFile": "${workspaceFolder}/agent-service/.env" // Load environment variables for the test
+        },
+        {
             "name": "Debug Jest Tests",
             "type": "node",
             "request": "launch",
