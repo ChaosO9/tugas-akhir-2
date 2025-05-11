@@ -137,9 +137,10 @@ export default async function pengirimanDataAnamnesisService(
                         display: `Kunjungan ${dataMasterPasien.patient_name} di hari ${dataMasterPasien.arrived}`,
                     },
                     recordedDate: allergyItem.alergi_created_date,
-                    // recorder: {
-                    //     reference: "Practitioner/{{Practitioner_id}}",
-                    // },
+                    recorder: {
+                        reference: `Practitioner/${dataMasterPasien.practitioner_id}`,
+                        display: `${dataMasterPasien.practitioner_name}`,
+                    },
                 },
                 request: {
                     method: "POST",
