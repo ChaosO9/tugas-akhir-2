@@ -6,8 +6,7 @@ export default async function dapatkanPeresepanObat(
     dataMasterPasien: KunjunganRawatInap,
 ): Promise<dataPeresepanObat | AppError> {
     try {
-        const medication = await db.query(
-            `
+        const medicationQueryText = `
                 SELECT
                     resepdet_uuid AS medication_uuid,
                     resepdet_racikan AS racikan,
@@ -114,13 +113,13 @@ export default async function dapatkanPeresepanObat(
                     AND t_resepdet.resepdet_aktif = 'y' 
                     AND t_resepdet.resepdetracikan_resepdet_id IS NULL 
                     AND t_pendaftaran.pendaftaran_no = '${dataMasterPasien.registration_id}' 
+                    AND t_pendaftaran.pendaftaran_no = $1
                 ORDER BY
                     resep_id ASC;
-            `,
-        );
+            `;
+        const medicationValues = [dataMasterPasien.registration_id];
 
-        const medicationRequest = await db.query(
-            `
+        const medicationRequestQueryText = `
                 SELECT
                     resepdet_uuid AS medicationRequest_uuid,
                     resep_no AS identifier_value_1,
@@ -216,14 +215,20 @@ export default async function dapatkanPeresepanObat(
                     AND t_resepdet.resepdet_aktif = 'y' 
                     AND t_resepdet.resepdetracikan_resepdet_id IS NULL 
                     AND t_pendaftaran.pendaftaran_no = '${dataMasterPasien.registration_id}' 
+                    AND t_pendaftaran.pendaftaran_no = $1
                 ORDER BY
                     resep_id ASC;
-            `,
-        );
+            `;
+        const medicationRequestValues = [dataMasterPasien.registration_id];
+
+        const [medicationResult, medicationRequestResult] = await Promise.all([
+            db.query(medicationQueryText, medicationValues),
+            db.query(medicationRequestQueryText, medicationRequestValues),
+        ]);
 
         const gabungData = {
-            medication: medication.rows,
-            medicationRequest: medicationRequest.rows,
+            medication: medicationResult.rows,
+            medicationRequest: medicationRequestResult.rows,
         };
 
         return gabungData;

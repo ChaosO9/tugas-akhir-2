@@ -9,8 +9,7 @@ export default async function dapatkanHasilPemeriksaanFisik(
     dataMasterPasien: KunjunganRawatInap,
 ): Promise<dataHasilPemeriksaanFisik[] | AppError> {
     try {
-        const result = await db.query(
-            `
+        const queryText = `
                 SELECT
                     periksa_id,
                     periksa_pendaftaran_id,
@@ -65,9 +64,11 @@ export default async function dapatkanHasilPemeriksaanFisik(
                     AND COALESCE ( t_pendaftaran.pendaftaran_uuid, '' ) <> '' 
                     AND COALESCE ( m_pasien.pasien_fhir_id, '' ) <> '' 
                     AND COALESCE ( m_pegawai.pegawai_fhir_id, '' ) <> '' 
-                    AND t_pendaftaran.pendaftaran_no = '${dataMasterPasien.registration_id}';
-        `,
-        );
+                    AND t_pendaftaran.pendaftaran_no = $1;
+        `;
+        const values = [dataMasterPasien.registration_id];
+
+        const result = await db.query(queryText, values);
         return result.rows as dataHasilPemeriksaanFisik[];
     } catch (err) {
         console.error("Error fetching physical examination data:", err);

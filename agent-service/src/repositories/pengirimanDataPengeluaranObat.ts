@@ -6,8 +6,7 @@ export default async function dapatkanPengeluaranObat(
     dataMasterPasien: KunjunganRawatInap,
 ): Promise<dataPengeluaranObat | AppError> {
     try {
-        const medication = await db.query(
-            `
+        const medicationQueryText = `
                 SELECT
                     resepdet_uuid AS medication_uuid,
                     resepdet_racikan AS racikan,
@@ -114,13 +113,13 @@ export default async function dapatkanPengeluaranObat(
                     AND t_resepdet.resepdet_aktif = 'y' 
                     AND t_resepdet.resepdetracikan_resepdet_id IS NULL 
                     AND t_pendaftaran.pendaftaran_no = '${dataMasterPasien.registration_id}' 
+                    AND t_pendaftaran.pendaftaran_no = $1
                 ORDER BY
                     resep_id ASC;
-            `,
-        );
+            `;
+        const medicationValues = [dataMasterPasien.registration_id];
 
-        const medicationDispense = await db.query(
-            `
+        const medicationDispenseQueryText = `
                 SELECT
                     resepdet_uuid AS medicationRequest_uuid,
                     resep_no AS identifier_value_1,
@@ -216,21 +215,27 @@ export default async function dapatkanPengeluaranObat(
                     AND t_resepdet.resepdet_aktif = 'y' 
                     AND t_resepdet.resepdetracikan_resepdet_id IS NULL 
                     AND t_pendaftaran.pendaftaran_no = '${dataMasterPasien.registration_id}' 
+                    AND t_pendaftaran.pendaftaran_no = $1
                 ORDER BY
                     resep_id ASC;
-            `,
-        );
+            `;
+        const medicationDispenseValues = [dataMasterPasien.registration_id];
+
+        const [medicationResult, medicationDispenseResult] = await Promise.all([
+            db.query(medicationQueryText, medicationValues),
+            db.query(medicationDispenseQueryText, medicationDispenseValues),
+        ]);
 
         const gabungData = {
-            medication: medication.rows,
-            medicationDispense: medicationDispense.rows,
+            medication: medicationResult.rows,
+            medicationDispense: medicationDispenseResult.rows,
         };
 
         return gabungData;
     } catch (err) {
-        console.error("Error fetching medicine prescription data:", err);
+        console.error("Error fetching medicine dispensing data:", err);
         return new AppError(
-            `Error fetching medicine prescription data: ${dataMasterPasien.patient_name}'s patient!`,
+            `Error fetching medicine dispensing data for ${dataMasterPasien.patient_name}'s patient!`,
             500,
         );
     }
