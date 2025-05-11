@@ -68,7 +68,7 @@ export default async function dapatkanPemeriksaanLab(
             pmedispasien_uuid AS specimen_uuid,
             pendaftaran_uuid AS encounter,
             pmedispasien_id AS value, -- Added alias for clarity
-            penunjangspesimenloinc_link AS spesimen_sytem,
+            penunjangspesimenloinc_link AS spesimen_system,
             penunjangspesimenloinc_kode AS spesimen_kode,
             penunjangspesimenloinc_nama AS spesimen_nama,
             penunjangmetodeloinc_link AS metode_system,
