@@ -52,9 +52,9 @@ const mockDataMasterPasien: MockDataMasterPasien = {
         in_progress: "2022-12-08T02:21:48.000Z",
         finished: "2022-12-08T02:22:32.000Z",
         patient_id: "P02478375538",
-        patient_name: "KAYLILA FAUZIAH, NY",
+        patient_name: "Ardianto Putra",
         practitioner_id: "10009880728",
-        practitioner_name: "TIARA PRAMAESYA",
+        practitioner_name: "dr. Alexander",
         period_start: "2022-12-08T02:16:57.000Z",
         period_end: "2022-12-08T02:22:32.000Z",
         diagnosa: [
@@ -77,7 +77,7 @@ const mockDataMasterPasien: MockDataMasterPasien = {
         patient_id: "P02478375538",
         patient_name: "REVA ANDHARA KIRANA, TN",
         practitioner_id: "10009880728",
-        practitioner_name: "BUDY SANTOSO, SP. BM",
+        practitioner_name: "dr. Alexander",
         period_start: "2024-06-03T14:42:51.000Z",
         period_end: "2024-06-03T15:58:35.000Z",
         diagnosa: [
@@ -98,9 +98,9 @@ const mockDataMasterPasien: MockDataMasterPasien = {
         in_progress: "2024-07-18T10:43:10.000Z",
         finished: "2024-07-18T10:43:10.000Z",
         patient_id: "P02280547535",
-        patient_name: "SULASTRI NINGSIH, NYONYA",
+        patient_name: "Salsabila Anjani Rizki",
         practitioner_id: "10018452434",
-        practitioner_name: "Tenaga Medis 91495 (Mitra Medika)",
+        practitioner_name: "dr. Nathalie Tan, Sp.PK.",
         period_start: "2024-07-18T10:43:10.000Z",
         period_end: "2024-07-18T10:43:10.000Z",
         diagnosa: [
@@ -120,10 +120,10 @@ const mockDataMasterPasien: MockDataMasterPasien = {
         arrived: "2022-09-27T14:11:06.000Z",
         in_progress: "2022-09-27T14:11:25.000Z",
         finished: "2022-09-27T14:16:30.000Z",
-        patient_id: "P00515344124",
-        patient_name: "ANDHIKA MEGA KURNIAWAN",
+        patient_id: "P02280547535",
+        patient_name: "Salsabila Anjani Rizki",
         practitioner_id: "10009880728",
-        practitioner_name: "TIARA PRAMAESYA",
+        practitioner_name: "dr. Alexander",
         period_start: "2022-09-27T14:11:06.000Z",
         period_end: "2022-09-27T14:16:30.000Z",
         diagnosa: [
@@ -136,7 +136,6 @@ const mockDataMasterPasien: MockDataMasterPasien = {
         location_poli_id: "85df32eb-7b0a-4ab2-9867-5309d2b9d944",
         unit_nama: "POLI UMUM",
     },
-    // PengeluaranObat uses the same base data as PeresepanObat for this test setup
     PengeluaranObat: {
         org_id: "2143952e-a416-44ef-9085-20d551044c08",
         registration_id: "RJ27092022-00005",
@@ -144,10 +143,10 @@ const mockDataMasterPasien: MockDataMasterPasien = {
         arrived: "2022-09-27T14:11:06.000Z",
         in_progress: "2022-09-27T14:11:25.000Z",
         finished: "2022-09-27T14:16:30.000Z",
-        patient_id: "P00515344124",
-        patient_name: "ANDHIKA MEGA KURNIAWAN",
+        patient_id: "P02428473601",
+        patient_name: "Syarif Muhammad",
         practitioner_id: "10009880728",
-        practitioner_name: "TIARA PRAMAESYA",
+        practitioner_name: "dr. Alexander",
         period_start: "2022-09-27T14:11:06.000Z",
         period_end: "2022-09-27T14:16:30.000Z",
         diagnosa: [
@@ -162,15 +161,15 @@ const mockDataMasterPasien: MockDataMasterPasien = {
     },
     PemeriksaanLab: {
         org_id: "2143952e-a416-44ef-9085-20d551044c08",
-        registration_id: "RJ27092022-00005",
-        encounter_id: "35d37800-3c00-b319-215e-0a913d31003a",
+        registration_id: "LA11062024-00002",
+        encounter_id: "64b0f600-6b00-5565-3b10-6c6855d104c0",
         arrived: "2022-09-27T14:11:06.000Z",
         in_progress: "2022-09-27T14:11:25.000Z",
         finished: "2022-09-27T14:16:30.000Z",
-        patient_id: "P00515344124",
-        patient_name: "ANDHIKA MEGA KURNIAWAN",
+        patient_id: "P02428473601",
+        patient_name: "Syarif Muhammad",
         practitioner_id: "10009880728",
-        practitioner_name: "TIARA PRAMAESYA",
+        practitioner_name: "dr. Alexander",
         period_start: "2022-09-27T14:11:06.000Z",
         period_end: "2022-09-27T14:16:30.000Z",
         diagnosa: [
@@ -191,9 +190,9 @@ const mockDataMasterPasien: MockDataMasterPasien = {
         in_progress: "2024-06-03T15:58:35.000Z",
         finished: "2024-06-03T15:58:35.000Z",
         patient_id: "P02478375538",
-        patient_name: "REVA ANDHARA KIRANA, TN",
+        patient_name: "Ardianto Putra",
         practitioner_id: "10009880728",
-        practitioner_name: "BUDY SANTOSO, SP. BM",
+        practitioner_name: "dr. Alexander",
         period_start: "2024-06-03T14:42:51.000Z",
         period_end: "2024-06-03T15:58:35.000Z",
         diagnosa: [
@@ -210,10 +209,10 @@ const mockDataMasterPasien: MockDataMasterPasien = {
 // --- End Mock Data ---
 
 // Constants used across tests
-const ORGANIZATION_ID = "2143952e-a416-44ef-9085-20d551044c08";
+const ORGANIZATION_ID = "45f9b617-7bd7-4136-8803-5727aa0b890c";
 const LOCATION_ID = "85df32eb-7b0a-4ab2-9867-5309d2b9d944";
 const LOCATION_NAME = "POLI UMUM";
-const OUTPUT_DIR = path.join("json", "patient"); // Use path.join for directory path
+const OUTPUT_DIR = path.join("app", "output", "bundle", "json", "patient"); // Use path.join for directory path
 
 describe("Services Tests", () => {
     // Ensure the output directory exists before running tests
@@ -250,7 +249,7 @@ describe("Services Tests", () => {
 
     it("should generate JSON for dataKunjunganRawatInapService", async () => {
         const mockKunjungan = mockDataMasterPasien.KunjunganRawatInap;
-        const conditions: ConditionRow[] = []; // Correctly typed empty array
+        const conditions = mockDataMasterPasien.KunjunganRawatInap.diagnosa; // Correctly typed empty array
         const fileName = `${mockKunjungan.patient_name}_Kunjungan Rawat Inap`;
 
         const result = await dataKunjunganRawatInapService(
