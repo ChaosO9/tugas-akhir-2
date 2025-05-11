@@ -235,44 +235,44 @@ export interface IngredientRacikan {
 }
 
 export interface medicationRequest {
-    medication_uuid: string | null;
-    identifier_value_1: string | null;
-    identifier_value_2: string | null;
-    medicationReference_display: string | null; // Use camelCase for consistency
-    patient_id: string | null;
-    patient_name: string | null;
-    practitioner_id: string | null;
-    practitioner_name: string | null;
-    encounter: string | null;
-    authoredon: string | null; // Or Date
-    dosageInstruction_sequence: number | null;
-    dosageInstruction_text: string | null;
-    dosageInstruction_sequence_timing_repeat_frequency: number | null;
-    dosageInstruction_sequence_timing_repeat_period: number | null;
-    dosageInstruction_sequence_timing_repeat_periodUnit: string | null; // Use camelCase
-    route_coding_system: string | null; // Use camelCase for routeCodingSystem
-    dosageInstruction_route_coding_code: string | null;
-    dosageInstruction_route_coding_display: string | null;
-    dosageInstruction_doseAndRate_type_coding_system: string | null; // Use camelCase
-    dosageInstruction_doseAndRate_type_coding_code: string | null; // Use camelCase
-    dosageInstruction_doseAndRate_type_coding_display: string | null; // Use camelCase
-    dosageInstruction_doseAndRate_doseQuantity_unit: string | null; // Use camelCase
-    dosageInstruction_doseAndRate_doseQuantity_system: string | null; // Use camelCase
-    dosageInstruction_doseAndRate_doseQuantity_code: string | null; // Use camelCase
-    dispenseRequest_dispenseInterval_value: number | null; // Use camelCase
-    dispenseRequest_dispenseInterval_unit: string | null; // Use camelCase
-    dispenseRequest_dispenseInterval_system: string | null; // Use camelCase
-    dispenseRequest_dispenseInterval_code: string | null; // Use camelCase
-    dispenseRequest_validityPeriod_start: string | null; // Use camelCase
-    dispenseRequest_validityPeriod_end: string | null; // Use camelCase
-    dispenseRequest_quantity_value: number | null; // Use camelCase
-    dispenseRequest_quantity_unit: string | null; // Use camelCase
-    dispenseRequest_quantity_system: string | null; // Use camelCase
-    dispenseRequest_quantity_code: string | null; // Use camelCase
-    dispenseRequest_expectedSupplyDuration_unit: string | null; // Use camelCase
-    dispenseRequest_expectedSupplyDuration_system: string | null; // Use camelCase
-    dispenseRequest_expectedSupplyDuration_code: string | null; // Use camelCase
-    dispenseRequest_expectedSupplyDuration_value: number | null; // Use camelCase
+    medicationrequest_uuid: string;
+    identifier_value_1: string;
+    identifier_value_2: string;
+    medicationreference_display: string;
+    patient_id: string;
+    patient_name: string;
+    practitioner_id: string;
+    practitioner_name: string;
+    encounter: string;
+    authoredon: string;
+    dosageinstruction_sequence: number;
+    dosageinstruction_text: string;
+    dosageinstruction_sequence_timing_repeat_frequency: number | null;
+    dosageinstruction_sequence_timing_repeat_period: number;
+    dosageinstruction_sequence_timing_repeat_periodunit: string;
+    route_coding_system: string;
+    dosageinstruction_route_coding_code: string;
+    dosageinstruction_route_coding_display: string;
+    dosageinstruction_doseandrate_type_coding_system: string;
+    dosageinstruction_doseandrate_type_coding_code: string;
+    dosageinstruction_doseandrate_type_coding_display: string;
+    dosageinstruction_doseandrate_dosequantity_unit: string;
+    dosageinstruction_doseandrate_dosequantity_system: string;
+    dosageinstruction_doseandrate_dosequantity_code: string;
+    dispenserequest_dispenseinterval_value: number;
+    dispenserequest_dispenseinterval_unit: string;
+    dispenserequest_dispenseinterval_system: string;
+    dispenserequest_dispenseinterval_code: string;
+    dispenserequest_validityperiod_start: string;
+    dispenserequest_validityperiod_end: string;
+    dispenserequest_quantity_value: number;
+    dispenserequest_quantity_unit: string;
+    dispenserequest_quantity_system: string;
+    dispenserequest_quantity_code: string;
+    dispenserequest_expectedsupplyduration_unit: string | null;
+    dispenserequest_expectedsupplyduration_system: string;
+    dispenserequest_expectedsupplyduration_code: string | null;
+    dispenserequest_expectedsupplyduration_value: number | null;
     org_id: string;
 }
 
@@ -282,45 +282,45 @@ export interface dataPeresepanObat {
 }
 
 export interface medicationDispense {
-    medicationRequest_uuid: string | null;
-    identifier_value_1: string | null;
-    identifier_value_2: string | null;
-    medicationReference_display: string | null;
-    patient_id: string | null;
-    patient_name: string | null;
-    practitioner_id: string | null;
-    practitioner_name: string | null;
-    encounter: string | null; // Assuming this is a date string
-    authoredOn: string | null; // Assuming this is a date string
-    dosageInstruction_sequence: number | null;
-    dosageInstruction_text: string | null;
-    dosageInstruction_sequence_timing_repeat_frequency: number | null;
-    dosageInstruction_sequence_timing_repeat_period: number | null;
-    dosageInstruction_sequence_timing_repeat_periodUnit: string | null;
-    dosageInstruction_route_coding_system: string | null;
-    dosageInstruction_route_coding_code: string | null;
-    dosageInstruction_route_coding_display: string | null;
-    dosageInstruction_doseAndRate_type_coding_system: string | null;
-    dosageInstruction_doseAndRate_type_coding_code: string | null;
-    dosageInstruction_doseAndRate_type_coding_display: string | null;
-    dosageInstruction_doseAndRate_doseQuantity_unit: string | null;
-    dosageInstruction_doseAndRate_doseQuantity_system: string | null;
-    dosageInstruction_doseAndRate_doseQuantity_code: string | null;
-    dispenseRequest_dispenseInterval_value: number | null;
-    dispenseRequest_dispenseInterval_unit: string | null;
-    dispenseRequest_dispenseInterval_system: string | null;
-    dispenseRequest_dispenseInterval_code: string | null;
-    dispenseRequest_validityPeriod_start: string | null; // Assuming date string
-    dispenseRequest_validityPeriod_end: string | null; // Assuming date string
-    dispenseRequest_quantity_value: number | null;
-    dispenseRequest_quantity_unit: string | null;
-    dispenseRequest_quantity_system: string | null;
-    dispenseRequest_quantity_code: string | null;
-    dispenseRequest_expectedSupplyDuration_unit: string | null;
-    dispenseRequest_expectedSupplyDuration_system: string | null;
-    dispenseRequest_expectedSupplyDuration_code: string | null;
-    dispenseRequest_expectedSupplyDuration_value: number | null;
-    org_id: string | null;
+    medicationrequest_uuid: string;
+    identifier_value_1: string;
+    identifier_value_2: string;
+    medicationreference_display: string;
+    patient_id: string;
+    patient_name: string;
+    practitioner_id: string;
+    practitioner_name: string;
+    encounter: string;
+    authoredon: string; // Changed from authoredOn
+    dosageinstruction_sequence: number;
+    dosageinstruction_text: string;
+    dosageinstruction_sequence_timing_repeat_frequency: number | null;
+    dosageinstruction_sequence_timing_repeat_period: number;
+    dosageinstruction_sequence_timing_repeat_periodunit: string;
+    route_coding_system: string; // Changed from dosageInstruction_route_coding_system
+    dosageinstruction_route_coding_code: string;
+    dosageinstruction_route_coding_display: string;
+    dosageinstruction_doseandrate_type_coding_system: string;
+    dosageinstruction_doseandrate_type_coding_code: string;
+    dosageinstruction_doseandrate_type_coding_display: string;
+    dosageinstruction_doseandrate_dosequantity_unit: string;
+    dosageinstruction_doseandrate_dosequantity_system: string;
+    dosageinstruction_doseandrate_dosequantity_code: string;
+    dispenserequest_dispenseinterval_value: number;
+    dispenserequest_dispenseinterval_unit: string;
+    dispenserequest_dispenseinterval_system: string;
+    dispenserequest_dispenseinterval_code: string;
+    dispenserequest_validityperiod_start: string;
+    dispenserequest_validityperiod_end: string;
+    dispenserequest_quantity_value: number;
+    dispenserequest_quantity_unit: string;
+    dispenserequest_quantity_system: string;
+    dispenserequest_quantity_code: string;
+    dispenserequest_expectedsupplyduration_unit: string | null;
+    dispenserequest_expectedsupplyduration_system: string; // Was string | null
+    dispenserequest_expectedsupplyduration_code: string | null;
+    dispenserequest_expectedsupplyduration_value: number | null;
+    org_id: string;
 }
 
 export interface dataPengeluaranObat {
