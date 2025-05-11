@@ -134,7 +134,7 @@ export default async function pengirimanDataPeresepanObat(
     if (Array.isArray(medicationRequest) && medicationRequest.length > 0) {
         medicationRequest.forEach((medRecItem) => {
             jsonMedication.push({
-                fullUrl: `urn:uuid:${medRecItem.medication_uuid}`,
+                fullUrl: `urn:uuid:${medRecItem.medicationrequest_uuid}`,
                 resource: {
                     resourceType: "MedicationRequest",
                     identifier: [
@@ -165,8 +165,8 @@ export default async function pengirimanDataPeresepanObat(
                     ],
                     // priority: "routine",
                     medicationReference: {
-                        reference: `Medication/${medRecItem.medication_uuid}`,
-                        display: medRecItem.medicationReference_display,
+                        reference: `Medication/${medRecItem.medicationrequest_uuid}`,
+                        display: medRecItem.medicationreference_display,
                     },
                     subject: {
                         reference: `Patient/${medRecItem.patient_id}`,
@@ -189,7 +189,7 @@ export default async function pengirimanDataPeresepanObat(
                     // ],
                     dosageInstruction: [
                         {
-                            sequence: medRecItem.dosageInstruction_sequence,
+                            sequence: medRecItem.dosageinstruction_sequence,
                             // additionalInstruction: [
                             //     {
                             //         coding: [
@@ -205,20 +205,20 @@ export default async function pengirimanDataPeresepanObat(
                             timing: {
                                 repeat: {
                                     frequency:
-                                        medRecItem.dosageInstruction_sequence_timing_repeat_frequency,
-                                    period: medRecItem.dosageInstruction_sequence_timing_repeat_period,
+                                        medRecItem.dosageinstruction_sequence_timing_repeat_frequency,
+                                    period: medRecItem.dosageinstruction_sequence_timing_repeat_period,
                                     periodUnit:
-                                        medRecItem.dosageInstruction_sequence_timing_repeat_periodUnit,
+                                        medRecItem.dosageinstruction_sequence_timing_repeat_periodunit,
                                 },
                             },
-                            ...(medRecItem.dosageInstruction_route_coding_code && {
+                            ...(medRecItem.dosageinstruction_route_coding_code && {
                                 route: {
                                     coding: [
                                         {
                                             system: medRecItem.route_coding_system,
-                                            code: medRecItem.dosageInstruction_route_coding_code,
+                                            code: medRecItem.dosageinstruction_route_coding_code,
                                             display:
-                                                medRecItem.dosageInstruction_route_coding_display,
+                                                medRecItem.dosageinstruction_route_coding_display,
                                         },
                                     ],
                                 },
@@ -228,57 +228,57 @@ export default async function pengirimanDataPeresepanObat(
                                     type: {
                                         coding: [
                                             {
-                                                system: medRecItem.dosageInstruction_doseAndRate_type_coding_system,
-                                                code: medRecItem.dosageInstruction_doseAndRate_type_coding_code,
+                                                system: medRecItem.dosageinstruction_doseandrate_type_coding_system,
+                                                code: medRecItem.dosageinstruction_doseandrate_type_coding_code,
                                                 display:
-                                                    medRecItem.dosageInstruction_doseAndRate_type_coding_system,
+                                                    medRecItem.dosageinstruction_doseandrate_type_coding_system,
                                             },
                                         ],
                                     },
                                     doseQuantity: {
                                         // value: medRecItem.dosageInstruction_doseAndRate_doseQuantity_value,
-                                        unit: medRecItem.dosageInstruction_doseAndRate_doseQuantity_unit,
-                                        system: medRecItem.dosageInstruction_doseAndRate_doseQuantity_system,
-                                        code: medRecItem.dosageInstruction_doseAndRate_doseQuantity_code,
+                                        unit: medRecItem.dosageinstruction_doseandrate_dosequantity_unit,
+                                        system: medRecItem.dosageinstruction_doseandrate_dosequantity_system,
+                                        code: medRecItem.dosageinstruction_doseandrate_dosequantity_code,
                                     },
                                 },
                             ],
-                            ...(medRecItem.dosageInstruction_text && {
-                                text: medRecItem.dosageInstruction_text,
+                            ...(medRecItem.dosageinstruction_text && {
+                                text: medRecItem.dosageinstruction_text,
                             }),
                         },
                     ],
                     dispenseRequest: {
-                        ...(medRecItem.dispenseRequest_dispenseInterval_value && {
+                        ...(medRecItem.dispenserequest_dispenseinterval_value && {
                             dispenseInterval: {
-                                value: medRecItem.dispenseRequest_dispenseInterval_value,
-                                unit: medRecItem.dispenseRequest_dispenseInterval_unit,
-                                system: medRecItem.dispenseRequest_dispenseInterval_system,
-                                code: medRecItem.dispenseRequest_dispenseInterval_code,
+                                value: medRecItem.dispenserequest_dispenseinterval_value,
+                                unit: medRecItem.dispenserequest_dispenseinterval_unit,
+                                system: medRecItem.dispenserequest_dispenseinterval_system,
+                                code: medRecItem.dispenserequest_dispenseinterval_code,
                             },
                         }),
-                        ...(medRecItem.dispenseRequest_validityPeriod_start &&
-                            medRecItem.dispenseRequest_validityPeriod_end && {
+                        ...(medRecItem.dispenserequest_validityperiod_start &&
+                            medRecItem.dispenserequest_validityperiod_end && {
                                 validityPeriod: {
-                                    start: medRecItem.dispenseRequest_validityPeriod_start,
-                                    end: medRecItem.dispenseRequest_validityPeriod_end,
+                                    start: medRecItem.dispenserequest_validityperiod_start,
+                                    end: medRecItem.dispenserequest_validityperiod_end,
                                 },
                             }),
                         // numberOfRepeatsAllowed: 0,
-                        ...(medRecItem.dispenseRequest_quantity_value && {
+                        ...(medRecItem.dispenserequest_quantity_value && {
                             quantity: {
-                                value: medRecItem.dispenseRequest_quantity_value,
-                                unit: medRecItem.dispenseRequest_quantity_unit,
-                                system: medRecItem.dispenseRequest_quantity_system,
-                                code: medRecItem.dispenseRequest_quantity_code,
+                                value: medRecItem.dispenserequest_quantity_value,
+                                unit: medRecItem.dispenserequest_quantity_unit,
+                                system: medRecItem.dispenserequest_quantity_system,
+                                code: medRecItem.dispenserequest_quantity_code,
                             },
                         }),
-                        ...(medRecItem.dispenseRequest_expectedSupplyDuration_value && {
+                        ...(medRecItem.dispenserequest_expectedsupplyduration_value && {
                             expectedSupplyDuration: {
-                                value: medRecItem.dispenseRequest_expectedSupplyDuration_value,
-                                unit: medRecItem.dispenseRequest_expectedSupplyDuration_unit,
-                                system: medRecItem.dispenseRequest_expectedSupplyDuration_system,
-                                code: medRecItem.dispenseRequest_expectedSupplyDuration_code,
+                                value: medRecItem.dispenserequest_expectedsupplyduration_value,
+                                unit: medRecItem.dispenserequest_expectedsupplyduration_unit,
+                                system: medRecItem.dispenserequest_expectedsupplyduration_system,
+                                code: medRecItem.dispenserequest_expectedsupplyduration_code,
                             },
                         }),
                         performer: {
