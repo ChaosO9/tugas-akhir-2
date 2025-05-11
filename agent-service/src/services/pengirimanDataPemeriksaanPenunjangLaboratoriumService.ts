@@ -1,3 +1,4 @@
+import { dateTimeToUTC } from "../utils/dateTimeToUTC";
 import {
     KunjunganRawatInap,
     dataPemeriksaanLab,
@@ -65,7 +66,7 @@ export default async function pengirimanDataPemeriksaanPenunjangLaboratoriumServ
                             display: `${serviceRequestItem.text}`,
                         },
                         // occurrenceDateTime: "2022-12-26T16:30:00+00:00",
-                        authoredOn: `${serviceRequestItem.authoredon}`,
+                        authoredOn: `${dateTimeToUTC(serviceRequestItem.authoredon)}`,
                         requester: {
                             reference: `Practitioner/${serviceRequestItem.practitioner_id}`,
                             display: `${serviceRequestItem.practitioner_nama}`,
@@ -161,7 +162,7 @@ export default async function pengirimanDataPemeriksaanPenunjangLaboratoriumServ
                         reference: `Patient/${specimenItem.patient_id}`,
                         display: specimenItem.patient_name,
                     },
-                    receivedTime: specimenItem.authoredon,
+                    receivedTime: dateTimeToUTC(specimenItem.authoredon),
                     request: [
                         {
                             reference: `ServiceRequest/${specimenItem.servicerequest_uuid}`,
@@ -274,7 +275,9 @@ export default async function pengirimanDataPemeriksaanPenunjangLaboratoriumServ
                         encounter: {
                             reference: `Encounter/${observationItem.encounter}`,
                         },
-                        effectiveDateTime: observationItem.authoredon,
+                        effectiveDateTime: dateTimeToUTC(
+                            observationItem.authoredon,
+                        ),
                         // issued: "2022-12-26T22:30:10+00:00",
                         performer: [
                             {
