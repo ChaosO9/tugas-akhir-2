@@ -191,6 +191,8 @@ const handleRedisMessage = async (
                         bundle: bundle,
                         job_uuid: job_uuid,
                     });
+                    job.retries(3);
+                    job.backoff("exponential", 10000);
                     await job.save();
                     console.log(
                         `[${job_uuid}] Job ${job.id} created and saved successfully.`
