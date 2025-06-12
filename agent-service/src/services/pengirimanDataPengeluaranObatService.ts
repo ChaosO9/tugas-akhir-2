@@ -1,5 +1,9 @@
 import { v4 } from "uuid";
 import { dataPengeluaranObat, KunjunganRawatInap } from "../utils/interface";
+import {
+    MedicationRequestResource,
+    resourceTemplate,
+} from "../utils/interfaceValidation";
 
 export default async function pengirimanDataPengeluaranObat(
     dataMasterPasien: KunjunganRawatInap,
@@ -54,15 +58,15 @@ export default async function pengirimanDataPengeluaranObat(
                             },
                         },
                     ],
-                    ...(medicationItem.racikan === "t" && {
-                        identifier: [
-                            {
-                                use: "official",
-                                system: `http://sys-ids.kemkes.go.id/medication/${dataMasterPasien.org_id}`,
-                                value: medicationItem.identifier_value,
-                            },
-                        ],
-                    }),
+                    identifier: [
+                        {
+                            use: "official",
+                            system: `http://sys-ids.kemkes.go.id/medication/${dataMasterPasien.org_id}`,
+                            value:
+                                medicationItem.identifier_value ||
+                                "SEMBARANGAJA",
+                        },
+                    ],
                     ...(medicationItem.racikan === "t" && {
                         code: {
                             coding: [
@@ -104,23 +108,30 @@ export default async function pengirimanDataPengeluaranObat(
                                     ],
                                 },
                                 isActive: true,
-                                strength: {
-                                    ...(racikan !== null && {
-                                        numerator: {
-                                            value: racikan[0]
-                                                .ingredient_strength_value,
-                                            system: racikan[0]
-                                                .ingredient_denominator_system,
-                                            code: racikan[0]
-                                                .ingredient_denominator_kode,
-                                        },
-                                    }),
-                                    denominator: {
-                                        value: medicationItem.ingredient_strength_denominator_value,
-                                        system: medicationItem.strength_denominator_system,
-                                        code: medicationItem.strength_denominator_code,
+                                ...((racikan !== null ||
+                                    medicationItem.ingredient_strength_denominator_value !==
+                                        null) && {
+                                    strength: {
+                                        ...(racikan !== null && {
+                                            numerator: {
+                                                value: racikan[0]
+                                                    .ingredient_strength_value,
+                                                system: racikan[0]
+                                                    .ingredient_denominator_system,
+                                                code: racikan[0]
+                                                    .ingredient_denominator_kode,
+                                            },
+                                        }),
+                                        ...(medicationItem.ingredient_strength_denominator_value !==
+                                            null && {
+                                            denominator: {
+                                                value: medicationItem.ingredient_strength_denominator_value,
+                                                system: medicationItem.strength_denominator_system,
+                                                code: medicationItem.strength_denominator_code,
+                                            },
+                                        }),
                                     },
-                                },
+                                }),
                             },
                         ],
                     }),
@@ -135,6 +146,28 @@ export default async function pengirimanDataPengeluaranObat(
 
     if (Array.isArray(medicationDispense) && medicationDispense.length > 0) {
         medicationDispense.forEach((medDisItem) => {
+            // Find the corresponding MedicationRequest from the processed peresepanObat bundle
+            const correspondingMedicationRequest =
+                dataMasterPasien.processed_resource?.peresepanObat?.find(
+                    (item: resourceTemplate) =>
+                        item.resource.resourceType === "MedicationRequest" &&
+                        (
+                            item.resource as MedicationRequestResource
+                        ).identifier?.some(
+                            (id) =>
+                                id.system ===
+                                    `http://sys-ids.kemkes.go.id/prescription-item/${medDisItem.org_id}` &&
+                                id.value === medDisItem.identifier_value_2,
+                        ),
+                );
+
+            let authorizingPrescriptionRef = null;
+            if (correspondingMedicationRequest?.fullUrl) {
+                const fullUrlParts =
+                    correspondingMedicationRequest.fullUrl.split(":");
+                authorizingPrescriptionRef = `MedicationRequest/${fullUrlParts[fullUrlParts.length - 1]}`;
+            }
+
             jsonMedicationDispense.push({
                 fullUrl: `urn:uuid:${v4()}`,
                 resource: {
@@ -166,11 +199,11 @@ export default async function pengirimanDataPengeluaranObat(
                         display: medDisItem.medicationreference_display,
                     },
                     subject: {
-                        reference: `Patient/${medDisItem.patient_id}`,
-                        display: medDisItem.patient_name,
+                        reference: `Patient/${dataMasterPasien.patient_id}`,
+                        display: dataMasterPasien.patient_name,
                     },
                     context: {
-                        reference: `Encounter/${medDisItem.encounter}`,
+                        reference: `Encounter/${dataMasterPasien.encounter_id}`,
                     },
                     performer: [
                         {
@@ -340,7 +373,12 @@ export default async function pengirimanDataPengeluaranObat(
                                     end: medDisItem.dispenserequest_validityperiod_end,
                                 },
                             }),
-                    },
+                    }, // Add authorizingPrescription if a reference was found
+                    ...(authorizingPrescriptionRef && {
+                        authorizingPrescription: [
+                            { reference: authorizingPrescriptionRef },
+                        ],
+                    }),
                 },
                 request: {
                     method: "POST",
