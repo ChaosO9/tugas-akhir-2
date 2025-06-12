@@ -1,12 +1,16 @@
 import { dataPeresepanObat, KunjunganRawatInap } from "../utils/interface";
 import { Dosage } from "../utils/interfaceFHIR"; // For typing helper objects
-import { MedicationRequestDispenseRequest } from "../utils/interfaceValidation";
+import {
+    MedicationRequestDispenseRequest,
+    resourceTemplate,
+} from "../utils/interfaceValidation";
+import { v4 as uuidv4 } from "uuid";
 
 export default async function pengirimanDataPeresepanObat(
     dataMasterPasien: KunjunganRawatInap,
     dataPeresepanObat: dataPeresepanObat,
 ): Promise<object[]> {
-    let jsonMedication = [] as object[];
+    let jsonMedication: resourceTemplate[] = [];
 
     const medication = dataPeresepanObat.medication;
     const medicationRequest = dataPeresepanObat.medicationRequest;
@@ -40,29 +44,35 @@ export default async function pengirimanDataPeresepanObat(
                             "https://fhir.kemkes.go.id/r4/StructureDefinition/Medication",
                         ],
                     },
-                    extension: [
-                        {
-                            url: "https://fhir.kemkes.go.id/r4/StructureDefinition/MedicationType",
-                            valueCodeableConcept: {
-                                coding: [
-                                    {
-                                        system: "http://terminology.kemkes.go.id/CodeSystem/medication-type",
-                                        code: extension.code,
-                                        display: extension.display,
-                                    },
-                                ],
-                            },
-                        },
-                    ],
-                    ...(medicationItem.racikan === "t" && {
-                        identifier: [
+                    ...(extension.code !== null && {
+                        extension: [
                             {
-                                use: "official",
-                                system: `http://sys-ids.kemkes.go.id/medication/${dataMasterPasien.org_id}`,
-                                value: medicationItem.identifier_value,
+                                url: "https://fhir.kemkes.go.id/r4/StructureDefinition/MedicationType",
+                                valueCodeableConcept: {
+                                    coding: [
+                                        {
+                                            system: "http://terminology.kemkes.go.id/CodeSystem/medication-type",
+                                            ...(extension.code !== null && {
+                                                code: extension.code,
+                                            }),
+                                            ...(extension.display !== null && {
+                                                display: extension.display,
+                                            }),
+                                        },
+                                    ],
+                                },
                             },
                         ],
                     }),
+                    identifier: [
+                        {
+                            use: "official",
+                            system: `http://sys-ids.kemkes.go.id/medication/${dataMasterPasien.org_id}`,
+                            value:
+                                medicationItem.identifier_value ||
+                                "SEMBARANGAJA",
+                        },
+                    ],
                     ...(medicationItem.racikan === "t" && {
                         code: {
                             coding: [
@@ -82,9 +92,16 @@ export default async function pengirimanDataPeresepanObat(
                         form: {
                             coding: [
                                 {
-                                    system: medicationItem.form_coding_system,
+                                    ...(medicationItem.form_coding_system !==
+                                        null && {
+                                        system: medicationItem.form_coding_system,
+                                    }),
                                     code: medicationItem.form_coding_code,
-                                    display: medicationItem.form_coding_display,
+                                    ...(medicationItem.form_coding_display !==
+                                        null && {
+                                        display:
+                                            medicationItem.form_coding_display,
+                                    }),
                                 },
                             ],
                         },
@@ -363,7 +380,8 @@ export default async function pengirimanDataPeresepanObat(
             }
 
             jsonMedication.push({
-                fullUrl: `urn:uuid:${medRecItem.medicationrequest_uuid}`,
+                // fullUrl: `urn:uuid:${medRecItem.medicationrequest_uuid}`,
+                fullUrl: `urn:uuid:${uuidv4()}`,
                 resource: {
                     resourceType: "MedicationRequest",
                     identifier: [
@@ -444,6 +462,10 @@ export default async function pengirimanDataPeresepanObat(
                 },
             });
         });
+    }
+
+    if (dataMasterPasien.processed_resource) {
+        dataMasterPasien.processed_resource.peresepanObat = jsonMedication;
     }
 
     return jsonMedication;
