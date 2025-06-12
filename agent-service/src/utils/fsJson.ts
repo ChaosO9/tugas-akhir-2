@@ -11,18 +11,20 @@ export async function writeJSONBundlePasien(
     jsonData: any,
     dataMasterPasien: KunjunganRawatInap,
     filename?: string,
-): Promise<void> {
+): Promise<string> {
     try {
         await fsPromises.mkdir(OUTPUT_BASE_DIR, { recursive: true });
 
         const finalFilename =
             filename ||
-            `${dataMasterPasien.patient_id}_${dataMasterPasien.encounter_id}_${format(new Date(), "yyyyMMdd")}_NEW.json`;
+            `${dataMasterPasien.patient_id}_${dataMasterPasien.encounter_id}_${format(new Date(), "yyyyMMdd")}_${dataMasterPasien.patient_name}_NEW.json`;
         const filePath = path.join(OUTPUT_BASE_DIR, finalFilename);
 
         const jsonString = JSON.stringify(jsonData, null, 2); // Pretty print
 
         await fsPromises.writeFile(filePath, jsonString, "utf8");
+
+        return finalFilename;
     } catch (error) {
         console.error(`Error writing JSON file ${filename}:`, error);
         throw new AppError(
