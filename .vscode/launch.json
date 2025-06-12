@@ -35,6 +35,21 @@
             "envFile": "${workspaceFolder}\\sender-service\\.env",
         },
         {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Index Program - Agent Service",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\agent-service\\dist\\index.js",
+            "console": "integratedTerminal",
+            "outFiles": [
+                "${workspaceFolder}/agent-service/dist/**/*.js"
+            ],
+            // "preLaunchTask": "tsc: build - agent-service/tsconfig.json",
+            "envFile": "${workspaceFolder}\\agent-service\\.env",
+        },
+        {
             "name": "Debug serviceTest.test.ts",
             "type": "node",
             "request": "launch",
