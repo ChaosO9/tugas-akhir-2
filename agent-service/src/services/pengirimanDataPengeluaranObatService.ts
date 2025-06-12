@@ -241,28 +241,72 @@ export default async function pengirimanDataPengeluaranObat(
                                     ],
                                 },
                             }),
-                            doseAndRate: [
-                                {
-                                    ...(medDisItem.dosageinstruction_doseandrate_type_coding_code && {
-                                        type: {
-                                            coding: [
-                                                {
-                                                    system: medDisItem.dosageinstruction_doseandrate_type_coding_system,
-                                                    code: medDisItem.dosageinstruction_doseandrate_type_coding_code,
-                                                    display:
-                                                        medDisItem.dosageinstruction_doseandrate_type_coding_display,
-                                                },
-                                            ],
-                                        },
-                                    }),
-                                    doseQuantity: {
-                                        // value: medDisItem.dosageInstruction_doseQuantity_value,
-                                        unit: medDisItem.dosageinstruction_doseandrate_dosequantity_unit,
-                                        system: medDisItem.dosageinstruction_doseandrate_dosequantity_system,
-                                        code: medDisItem.dosageinstruction_doseandrate_dosequantity_code,
-                                    },
-                                },
-                            ],
+                            ...(() => {
+                                const drArray = [];
+                                const drEntry: any = {};
+
+                                // Build 'type' for drEntry
+                                const typeCoding: any = {};
+                                if (
+                                    medDisItem.dosageinstruction_doseandrate_type_coding_code
+                                ) {
+                                    if (
+                                        medDisItem.dosageinstruction_doseandrate_type_coding_system &&
+                                        medDisItem.dosageinstruction_doseandrate_type_coding_system.trim() !==
+                                            ""
+                                    ) {
+                                        typeCoding.system =
+                                            medDisItem.dosageinstruction_doseandrate_type_coding_system;
+                                    }
+                                    typeCoding.code =
+                                        medDisItem.dosageinstruction_doseandrate_type_coding_code;
+                                    if (
+                                        medDisItem.dosageinstruction_doseandrate_type_coding_display
+                                    ) {
+                                        typeCoding.display =
+                                            medDisItem.dosageinstruction_doseandrate_type_coding_display;
+                                    }
+                                    // Add type only if code is present
+                                    if (typeCoding.code) {
+                                        drEntry.type = { coding: [typeCoding] };
+                                    }
+                                }
+
+                                // Build 'doseQuantity' for drEntry
+                                const dq: any = {};
+                                // value is currently commented out in the interface/source data
+                                // if (medDisItem.dosageInstruction_doseQuantity_value) { dq.value = medDisItem.dosageInstruction_doseQuantity_value; }
+                                if (
+                                    medDisItem.dosageinstruction_doseandrate_dosequantity_unit
+                                ) {
+                                    dq.unit =
+                                        medDisItem.dosageinstruction_doseandrate_dosequantity_unit;
+                                }
+                                if (
+                                    medDisItem.dosageinstruction_doseandrate_dosequantity_system &&
+                                    medDisItem.dosageinstruction_doseandrate_dosequantity_system.trim() !==
+                                        ""
+                                ) {
+                                    dq.system =
+                                        medDisItem.dosageinstruction_doseandrate_dosequantity_system;
+                                }
+                                if (
+                                    medDisItem.dosageinstruction_doseandrate_dosequantity_code
+                                ) {
+                                    dq.code =
+                                        medDisItem.dosageinstruction_doseandrate_dosequantity_code;
+                                }
+                                if (Object.keys(dq).length > 0) {
+                                    drEntry.doseQuantity = dq;
+                                }
+
+                                if (Object.keys(drEntry).length > 0) {
+                                    drArray.push(drEntry);
+                                }
+                                return drArray.length > 0
+                                    ? { doseAndRate: drArray }
+                                    : {};
+                            })(),
                             text: medDisItem.dosageinstruction_text,
                         },
                     ],
