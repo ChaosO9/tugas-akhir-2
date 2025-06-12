@@ -48,10 +48,11 @@ const DEFAULT_BUNDLE_TYPE = "transaction";
 export async function createLogEntry(data: LogEntryInput): Promise<void> {
     const query = `
         INSERT INTO fhir_process_log (
-            job_uuid, pendaftaran_id, encounter_id, patient_id,
-            status, created_at, created_by, reg_company_id, reg_apps_id
+            job_uuid, pendaftaran_id, encounter_id, patient_id, status,
+            created_at, created_by, reg_company_id, reg_apps_id
         ) VALUES (
-            $1, $2, $3, $4, $5, NOW(), $6, $7, $8
+            $1, $2, $3, $4, $5,
+            NOW(), $6, $7, $8
         )
         ON CONFLICT (job_uuid) DO NOTHING; -- Avoid errors if somehow called twice
     `;
@@ -72,8 +73,8 @@ export async function createLogEntry(data: LogEntryInput): Promise<void> {
         data.patient_id,
         data.status,
         data.created_by,
-        regCompanyId, // Use fetched/default value
-        regAppsId, // Use fetched/default value
+        regCompanyId,
+        regAppsId,
     ];
 
     try {
