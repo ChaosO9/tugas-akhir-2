@@ -4,7 +4,9 @@
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "dev": "bun run --watch src/index.ts",
+        "dev:BRPOP": "bun run --watch src/indexBRPOP.ts",
         "start:sender": "ts-node src/sender.ts",
+        "start:sender-test": "ts-node src/senderTest.ts",
         "publish:job": "ts-node src/publisher.ts",
         "build": "tsc",
         "start:sender:prod": "node dist/sender.js",
