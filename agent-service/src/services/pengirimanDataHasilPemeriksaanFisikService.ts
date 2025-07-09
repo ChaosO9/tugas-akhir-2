@@ -60,7 +60,8 @@ export default async function pengirimanDataHasilPemeriksaanFisikService(
                             reference: `Patient/${dataMasterPasien.patient_id}`,
                         },
                         encounter: {
-                            reference: `Encounter/${hasilPemeriksaanItem.encounter}`,
+                            // reference: `Encounter/${hasilPemeriksaanItem.encounter}`,
+                            reference: `Encounter/${dataMasterPasien.encounter_id}`,
                             display: `${display} ${dataMasterPasien.patient_name} di hari ${new Date(hasilPemeriksaanItem.periksa_created_date).toLocaleString("id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}`,
                         },
                         effectiveDateTime:

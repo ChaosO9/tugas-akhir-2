@@ -30,7 +30,7 @@ export default async function pengirimanDataTujuanPerawatanService(
             // For simplicity, assuming they are already in correct 'date' format or will be handled by FHIR server.
 
             const goalResource: object = {
-                fullUrl: `urn:uuid:${item.fhir_id || uuidv4()}`,
+                fullUrl: `urn:uuid:${uuidv4()}`,
                 resource: {
                     ...fhirGoal, // Spread the original FHIR data
                     subject: subjectReference,

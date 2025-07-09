@@ -53,7 +53,8 @@ export default async function pengirimanDataDiagnosisService(
                             display: conditionItem.patient_name,
                         },
                         encounter: {
-                            reference: `Encounter/${conditionItem.pendaftaran_uuid}`,
+                            // reference: `Encounter/${conditionItem.pendaftaran_uuid}`,
+                            reference: `Encounter/${dataMasterPasien.encounter_id}`,
                             display: `Kunjungan ${conditionItem.patient_name} di tanggal ${dataMasterPasien.arrived}`,
                         },
                         onsetDateTime: new Date().toISOString(),

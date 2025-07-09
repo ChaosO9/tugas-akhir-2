@@ -1,5 +1,6 @@
 import AppError from "../utils/errorHandler";
 import { dataAnamnesis, KunjunganRawatInap } from "../utils/interface";
+import { v4 as uuidv4 } from "uuid";
 
 const AllergyCategory = {
     obat: "medication",
@@ -19,64 +20,68 @@ export default async function pengirimanDataAnamnesisService(
     if (Array.isArray(conditions) && conditions.length > 0) {
         conditions.forEach((conditionItem) => {
             conditionItem.condition.forEach((conditionObj) => {
-                jsonCondition.push({
-                    fullUrl: `urn:uuid:${conditionObj.condition_uuid}`,
-                    resource: {
-                        resourceType: "Condition",
-                        clinicalStatus: {
-                            coding: [
-                                {
-                                    system: "http://terminology.hl7.org/CodeSystem/condition-clinical",
-                                    code: "active",
-                                    display: "Active",
-                                },
-                            ],
-                        },
-                        category: [
-                            {
+                if (conditionObj.condition_kode !== "-") {
+                    jsonCondition.push({
+                        // fullUrl: `urn:uuid:${conditionObj.condition_uuid}`,
+                        fullUrl: `urn:uuid:${uuidv4()}`,
+                        resource: {
+                            resourceType: "Condition",
+                            clinicalStatus: {
                                 coding: [
                                     {
-                                        system: "http://terminology.kemkes.go.id",
-                                        code: "chief-complaint",
-                                        display: "Chief Complaint",
+                                        system: "http://terminology.hl7.org/CodeSystem/condition-clinical",
+                                        code: "active",
+                                        display: "Active",
                                     },
                                 ],
                             },
-                        ],
-                        code: {
-                            coding: [
+                            category: [
                                 {
-                                    system: "http://hl7.org/fhir/sid/icd-10",
-                                    code: conditionObj.condition_kode,
-                                    display: conditionObj.condition_nama,
+                                    coding: [
+                                        {
+                                            system: "http://terminology.kemkes.go.id",
+                                            code: "chief-complaint",
+                                            display: "Chief Complaint",
+                                        },
+                                    ],
                                 },
                             ],
+                            code: {
+                                coding: [
+                                    {
+                                        system: "http://hl7.org/fhir/sid/icd-10",
+                                        code: conditionObj.condition_kode,
+                                        display: conditionObj.condition_nama,
+                                    },
+                                ],
+                            },
+                            subject: {
+                                reference: `Patient/${conditionItem.patient_id}`,
+                                display: conditionItem.patient_name,
+                            },
+                            encounter: {
+                                // reference: `Encounter/${conditionItem.pendaftaran_uuid}`,
+                                reference: `Encounter/${dataMasterPasien.encounter_id}`,
+                                display: `Kunjungan ${conditionItem.patient_name} di tanggal ${dataMasterPasien.arrived}`,
+                            },
+                            onsetDateTime: new Date().toISOString(),
+                            recordedDate: new Date().toISOString(),
+                            recorder: {
+                                reference: `Practitioner/${dataMasterPasien.practitioner_id}`,
+                                display: `${dataMasterPasien.practitioner_name}`,
+                            },
+                            // note: [
+                            //     {
+                            //         text: "Wajah membengkak sejak sehari yang lalu",
+                            //     },
+                            // ],
                         },
-                        subject: {
-                            reference: `Patient/${conditionItem.patient_id}`,
-                            display: conditionItem.patient_name,
+                        request: {
+                            method: "POST",
+                            url: "Condition",
                         },
-                        encounter: {
-                            reference: `Encounter/${conditionItem.pendaftaran_uuid}`,
-                            display: `Kunjungan ${conditionItem.patient_name} di tanggal ${dataMasterPasien.arrived}`,
-                        },
-                        onsetDateTime: new Date().toISOString(),
-                        recordedDate: new Date().toISOString(),
-                        recorder: {
-                            reference: `Practitioner/${dataMasterPasien.practitioner_id}`,
-                            display: `${dataMasterPasien.practitioner_name}`,
-                        },
-                        // note: [
-                        //     {
-                        //         text: "Wajah membengkak sejak sehari yang lalu",
-                        //     },
-                        // ],
-                    },
-                    request: {
-                        method: "POST",
-                        url: "Condition",
-                    },
-                });
+                    });
+                }
             });
         });
     }

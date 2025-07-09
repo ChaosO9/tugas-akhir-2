@@ -2,6 +2,7 @@ import { dataPeresepanObat, KunjunganRawatInap } from "../utils/interface";
 import { Dosage } from "../utils/interfaceFHIR"; // For typing helper objects
 import {
     MedicationRequestDispenseRequest,
+    MedicationResource,
     resourceTemplate,
 } from "../utils/interfaceValidation";
 import { v4 as uuidv4 } from "uuid";
@@ -10,41 +11,57 @@ export default async function pengirimanDataPeresepanObat(
     dataMasterPasien: KunjunganRawatInap,
     dataPeresepanObat: dataPeresepanObat,
 ): Promise<object[]> {
-    let jsonMedication: resourceTemplate[] = [];
+    let jsonBundleEntries: resourceTemplate[] = [];
 
     const medication = dataPeresepanObat.medication;
     const medicationRequest = dataPeresepanObat.medicationRequest;
 
-    if (Array.isArray(medication) && medication.length > 0) {
-        medication.forEach((medicationItem) => {
-            const racikan =
-                medicationItem.ingredient_racikan === null
-                    ? null
-                    : medicationItem.ingredient_racikan;
+    if (Array.isArray(medicationRequest) && medicationRequest.length > 0) {
+        medicationRequest.forEach((medRecItem) => {
+            // Find the corresponding Medication data to be contained
+            const medicationItem = medication.find(
+                (m) => m.medication_uuid === medRecItem.medicationrequest_uuid,
+            );
 
-            let extension: { code: string | null; display: string | null } = {
-                code: null,
-                display: null,
-            };
+            let containedMedicationResource: MedicationResource | undefined =
+                undefined;
+            let medicationRefDisplay = medRecItem.medicationreference_display; // Fallback display
+            let medicationRefReference = medRecItem.medicationrequest_uuid
+                ? `Medication/${medRecItem.medicationrequest_uuid}`
+                : undefined; // Fallback reference
 
-            if (medicationItem.racikan === "y") {
-                extension.code = "NC";
-                extension.display = "Non-compound";
-            } else {
-                extension.code = "SD";
-                extension.display = "Gives of such doses";
-            }
+            if (medicationItem) {
+                const racikan =
+                    medicationItem.ingredient_racikan === null
+                        ? null
+                        : medicationItem.ingredient_racikan;
 
-            jsonMedication.push({
-                fullUrl: `urn:uuid:${medicationItem.medication_uuid}`,
-                resource: {
+                let extensionType: {
+                    code: string | null;
+                    display: string | null;
+                } = {
+                    code: null,
+                    display: null,
+                };
+
+                if (medicationItem.racikan === "y") {
+                    extensionType.code = "NC";
+                    extensionType.display = "Non-compound";
+                } else if (medicationItem.racikan === "t") {
+                    // Assuming 't' is for non-racikan/single component
+                    extensionType.code = "SD";
+                    extensionType.display = "Gives of such doses";
+                }
+
+                containedMedicationResource = {
                     resourceType: "Medication",
+                    id: medicationItem.medication_uuid!, // Crucial for local reference
                     meta: {
                         profile: [
                             "https://fhir.kemkes.go.id/r4/StructureDefinition/Medication",
                         ],
                     },
-                    ...(extension.code !== null && {
+                    ...(extensionType.code !== null && {
                         extension: [
                             {
                                 url: "https://fhir.kemkes.go.id/r4/StructureDefinition/MedicationType",
@@ -52,11 +69,12 @@ export default async function pengirimanDataPeresepanObat(
                                     coding: [
                                         {
                                             system: "http://terminology.kemkes.go.id/CodeSystem/medication-type",
-                                            ...(extension.code !== null && {
-                                                code: extension.code,
+                                            ...(extensionType.code !== null && {
+                                                code: extensionType.code,
                                             }),
-                                            ...(extension.display !== null && {
-                                                display: extension.display,
+                                            ...(extensionType.display !==
+                                                null && {
+                                                display: extensionType.display,
                                             }),
                                         },
                                     ],
@@ -70,24 +88,23 @@ export default async function pengirimanDataPeresepanObat(
                             system: `http://sys-ids.kemkes.go.id/medication/${dataMasterPasien.org_id}`,
                             value:
                                 medicationItem.identifier_value ||
-                                "SEMBARANGAJA",
+                                "UNKNOWN_MED_ID",
                         },
                     ],
-                    ...(medicationItem.racikan === "t" && {
-                        code: {
-                            coding: [
-                                {
-                                    system: "http://sys-ids.kemkes.go.id/kfa",
-                                    code: medicationItem.code_coding_code,
-                                    display: medicationItem.code_coding_display,
-                                },
-                            ],
-                        },
-                    }),
+                    ...(medicationItem.racikan === "t" &&
+                        medicationItem.code_coding_code && {
+                            code: {
+                                coding: [
+                                    {
+                                        system: "http://sys-ids.kemkes.go.id/kfa",
+                                        code: medicationItem.code_coding_code,
+                                        display:
+                                            medicationItem.code_coding_display,
+                                    },
+                                ],
+                            },
+                        }),
                     status: "active",
-                    // manufacturer: {
-                    //     reference: "Organization/90000001",
-                    // },
                     ...(medicationItem.form_coding_code !== null && {
                         form: {
                             coding: [
@@ -112,9 +129,6 @@ export default async function pengirimanDataPeresepanObat(
                             ingredient: medicationItem.ingredient_racikan
                                 .map((ing_detail) => {
                                     const ingredientEntry: any = {};
-
-                                    // itemCodeableConcept for the ingredient substance
-                                    // Assuming ing_detail.ingredient_strength_kode (KFA code of substance) is primary identifier
                                     if (
                                         ing_detail.ingredient_strength_kode !=
                                         null
@@ -124,16 +138,12 @@ export default async function pengirimanDataPeresepanObat(
                                                 {
                                                     system: "http://sys-ids.kemkes.go.id/kfa",
                                                     code: ing_detail.ingredient_strength_kode,
-                                                    // display: ing_detail.ingredient_strength_display // If available from SQL
                                                 },
                                             ],
                                         };
                                     }
-
                                     ingredientEntry.isActive = true;
-
                                     const strength: any = {};
-                                    // Numerator for strength - unit information is not available in IngredientRacikan
                                     if (
                                         ing_detail.ingredient_strength_value !=
                                         null
@@ -142,8 +152,6 @@ export default async function pengirimanDataPeresepanObat(
                                             value: ing_detail.ingredient_strength_value,
                                         };
                                     }
-
-                                    // Denominator for strength - requires value AND unit code
                                     if (
                                         ing_detail.ingredient_denominator_value !=
                                             null &&
@@ -162,7 +170,6 @@ export default async function pengirimanDataPeresepanObat(
                                                 ing_detail.ingredient_denominator_system;
                                         }
                                     }
-
                                     if (Object.keys(strength).length > 0) {
                                         ingredientEntry.strength = strength;
                                     }
@@ -173,19 +180,17 @@ export default async function pengirimanDataPeresepanObat(
                                         entry.itemCodeableConcept &&
                                         (entry.strength?.numerator ||
                                             entry.strength?.denominator),
-                                ), // Ensure ingredient has item and some strength
+                                ),
                         }),
-                },
-                request: {
-                    method: "POST",
-                    url: "Medication",
-                },
-            });
-        });
-    }
+                };
 
-    if (Array.isArray(medicationRequest) && medicationRequest.length > 0) {
-        medicationRequest.forEach((medRecItem) => {
+                if (containedMedicationResource.code?.coding?.[0]?.display) {
+                    medicationRefDisplay =
+                        containedMedicationResource.code.coding[0].display;
+                }
+                medicationRefReference = `#${containedMedicationResource.id}`;
+            }
+
             const dosageInstructionObject: Partial<Dosage> = {};
             if (medRecItem.dosageinstruction_sequence != null) {
                 dosageInstructionObject.sequence =
@@ -379,7 +384,7 @@ export default async function pengirimanDataPeresepanObat(
                 hasDispenseRequestData = true;
             }
 
-            jsonMedication.push({
+            const medicationRequestEntry: resourceTemplate = {
                 // fullUrl: `urn:uuid:${medRecItem.medicationrequest_uuid}`,
                 fullUrl: `urn:uuid:${uuidv4()}`,
                 resource: {
@@ -387,12 +392,12 @@ export default async function pengirimanDataPeresepanObat(
                     identifier: [
                         {
                             use: "official",
-                            system: `http://sys-ids.kemkes.go.id/prescription/${medRecItem.org_id}`,
+                            system: `http://sys-ids.kemkes.go.id/prescription/${dataMasterPasien.org_id}`,
                             value: medRecItem.identifier_value_1,
                         },
                         {
                             use: "official",
-                            system: `http://sys-ids.kemkes.go.id/prescription-item/${medRecItem.org_id}`,
+                            system: `http://sys-ids.kemkes.go.id/prescription-item/${dataMasterPasien.org_id}`,
                             value: medRecItem.identifier_value_2,
                         },
                     ],
@@ -410,14 +415,11 @@ export default async function pengirimanDataPeresepanObat(
                         },
                     ],
                     // priority: "routine",
-                    ...((medRecItem.medicationrequest_uuid ||
-                        medRecItem.medicationreference_display) && {
+                    ...(medicationRefReference && {
                         medicationReference: {
-                            ...(medRecItem.medicationrequest_uuid && {
-                                reference: `Medication/${medRecItem.medicationrequest_uuid}`,
-                            }),
-                            ...(medRecItem.medicationreference_display && {
-                                display: medRecItem.medicationreference_display,
+                            reference: medicationRefReference,
+                            ...(medicationRefDisplay && {
+                                display: medicationRefDisplay,
                             }),
                         },
                     }),
@@ -427,7 +429,7 @@ export default async function pengirimanDataPeresepanObat(
                     },
                     ...(medRecItem.encounter && {
                         encounter: {
-                            reference: `Encounter/${medRecItem.encounter}`,
+                            reference: `Encounter/${dataMasterPasien.encounter_id}`,
                         },
                     }),
                     ...(medRecItem.authoredon && {
@@ -445,9 +447,9 @@ export default async function pengirimanDataPeresepanObat(
                         },
                     }),
                     ...(medRecItem.org_id && {
-                        performer: [
-                            { reference: `Organization/${medRecItem.org_id}` },
-                        ],
+                        performer: {
+                            reference: `Organization/${medRecItem.org_id}`,
+                        },
                     }),
                     ...(Object.keys(dosageInstructionObject).length > 0 && {
                         dosageInstruction: [dosageInstructionObject],
@@ -455,20 +457,23 @@ export default async function pengirimanDataPeresepanObat(
                     ...(hasDispenseRequestData && {
                         dispenseRequest: dispenseRequestObject,
                     }),
+                    ...(containedMedicationResource && {
+                        contained: [containedMedicationResource],
+                    }),
                 },
                 request: {
                     method: "POST",
                     url: "MedicationRequest",
                 },
-            });
+            };
+            jsonBundleEntries.push(medicationRequestEntry);
         });
     }
 
     if (dataMasterPasien.processed_resource) {
-        dataMasterPasien.processed_resource.peresepanObat = jsonMedication;
+        dataMasterPasien.processed_resource.peresepanObat = jsonBundleEntries;
     }
-
-    return jsonMedication;
+    return jsonBundleEntries;
 }
 
 // Masih menerka nerka apakah data obat termasuk DTD atau Non DTD. Resepdet_id dan resepdet_resep_id tidak digunakan

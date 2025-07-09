@@ -1,6 +1,7 @@
 import { v4 } from "uuid";
 import { dataPengeluaranObat, KunjunganRawatInap } from "../utils/interface";
 import {
+    MedicationResource,
     MedicationRequestResource,
     resourceTemplate,
 } from "../utils/interfaceValidation";
@@ -11,165 +12,187 @@ export default async function pengirimanDataPengeluaranObat(
     LocationName: string,
 ): Promise<object[]> {
     let jsonMedicationDispense = [] as object[];
-
     const medication = dataPengeluaranObat.medication;
     const medicationDispense = dataPengeluaranObat.medicationDispense;
 
-    if (Array.isArray(medication) && medication.length > 0) {
-        medication.forEach((medicationItem) => {
-            const racikan =
-                medicationItem.ingredient_racikan === null
-                    ? null
-                    : medicationItem.ingredient_racikan;
+    if (Array.isArray(medicationDispense) && medicationDispense.length > 0) {
+        medicationDispense.forEach((medDisItem) => {
+            // Find the corresponding Medication data
+            const medicationDataItem = medication.find(
+                (m) => m.medication_uuid === medDisItem.medicationrequest_uuid, // Assuming medicationrequest_uuid in medDisItem links to medication_uuid
+            );
 
-            let extension: { code: string | null; display: string | null } = {
-                code: null,
-                display: null,
-            };
+            let containedMedicationResource: MedicationResource | undefined =
+                undefined;
+            let medicationReferenceDisplay =
+                medDisItem.medicationreference_display; // Default display
 
-            if (medicationItem.racikan === "y") {
-                extension.code = "NC";
-                extension.display = "Non-compound";
-            } else {
-                extension.code = "SD";
-                extension.display = "Gives of such doses";
-            }
+            if (medicationDataItem) {
+                const racikan =
+                    medicationDataItem.ingredient_racikan === null
+                        ? null
+                        : medicationDataItem.ingredient_racikan;
 
-            jsonMedicationDispense.push({
-                fullUrl: `urn:uuid:${medicationItem.medication_uuid}`,
-                resource: {
+                let extensionType: {
+                    code: string | null;
+                    display: string | null;
+                } = {
+                    code: null,
+                    display: null,
+                };
+
+                if (medicationDataItem.racikan === "y") {
+                    extensionType.code = "NC";
+                    extensionType.display = "Non-compound";
+                } else if (medicationDataItem.racikan === "t") {
+                    extensionType.code = "SD";
+                    extensionType.display = "Gives of such doses";
+                }
+
+                // Construct the Medication resource to be contained
+                containedMedicationResource = {
                     resourceType: "Medication",
+                    id: medicationDataItem.medication_uuid || v4(), // Use existing UUID or generate new for local reference
                     meta: {
                         profile: [
                             "https://fhir.kemkes.go.id/r4/StructureDefinition/Medication",
                         ],
                     },
-                    extension: [
-                        {
-                            url: "https://fhir.kemkes.go.id/r4/StructureDefinition/MedicationType",
-                            valueCodeableConcept: {
-                                coding: [
-                                    {
-                                        system: "http://terminology.kemkes.go.id/CodeSystem/medication-type",
-                                        code: extension.code,
-                                        display: extension.display,
-                                    },
-                                ],
+                    ...(extensionType.code && {
+                        extension: [
+                            {
+                                url: "https://fhir.kemkes.go.id/r4/StructureDefinition/MedicationType",
+                                valueCodeableConcept: {
+                                    coding: [
+                                        {
+                                            system: "http://terminology.kemkes.go.id/CodeSystem/medication-type",
+                                            code: extensionType.code,
+                                            ...(extensionType.display !==
+                                                null && {
+                                                display: extensionType.display,
+                                            }),
+                                        },
+                                    ],
+                                },
                             },
-                        },
-                    ],
+                        ],
+                    }),
                     identifier: [
                         {
                             use: "official",
                             system: `http://sys-ids.kemkes.go.id/medication/${dataMasterPasien.org_id}`,
                             value:
-                                medicationItem.identifier_value ||
-                                "SEMBARANGAJA",
+                                medicationDataItem.identifier_value ||
+                                "UNKNOWN_MED_ID", // Fallback if identifier_value is missing
                         },
                     ],
-                    ...(medicationItem.racikan === "t" && {
-                        code: {
-                            coding: [
-                                {
-                                    system: "http://sys-ids.kemkes.go.id/kfa",
-                                    code: medicationItem.code_coding_code,
-                                    display: medicationItem.code_coding_display,
-                                },
-                            ],
-                        },
-                    }),
-                    status: "active",
-                    // manufacturer: {
-                    //     reference: "Organization/90000001",
-                    // },
-                    ...(medicationItem.form_coding_code !== null && {
+                    ...(medicationDataItem.racikan === "t" &&
+                        medicationDataItem.code_coding_code && {
+                            code: {
+                                coding: [
+                                    {
+                                        system: "http://sys-ids.kemkes.go.id/kfa",
+                                        code: medicationDataItem.code_coding_code,
+                                        display:
+                                            medicationDataItem.code_coding_display,
+                                    },
+                                ],
+                            },
+                        }),
+                    status: "active", // Default status
+                    // manufacturer: { reference: `Organization/${dataMasterPasien.org_id}` }, // Example, adjust if needed
+                    ...(medicationDataItem.form_coding_code && {
                         form: {
                             coding: [
                                 {
-                                    system: medicationItem.form_coding_system,
-                                    code: medicationItem.form_coding_code,
-                                    display: medicationItem.form_coding_display,
+                                    ...(medicationDataItem.form_coding_system !==
+                                        null && {
+                                        system: medicationDataItem.form_coding_system,
+                                    }),
+                                    code: medicationDataItem.form_coding_code,
+                                    ...(medicationDataItem.form_coding_display !==
+                                        null && {
+                                        display:
+                                            medicationDataItem.form_coding_display,
+                                    }),
                                 },
                             ],
                         },
                     }),
-                    ...((medicationItem.racikan === "y" ||
-                        medicationItem.ingredient_racikan) && {
-                        ingredient: [
-                            {
-                                itemCodeableConcept: {
-                                    coding: [
-                                        {
-                                            system: "http://sys-ids.kemkes.go.id/kfa",
-                                            code: medicationItem.itemCodeableConcept_coding_code,
-                                            display:
-                                                medicationItem.itemCodeableConcept_coding_display,
-                                        },
-                                    ],
-                                },
-                                isActive: true,
-                                ...((racikan !== null ||
-                                    medicationItem.ingredient_strength_denominator_value !==
-                                        null) && {
-                                    strength: {
-                                        ...(racikan !== null && {
-                                            numerator: {
-                                                value: racikan[0]
-                                                    .ingredient_strength_value,
-                                                system: racikan[0]
-                                                    .ingredient_denominator_system,
-                                                code: racikan[0]
-                                                    .ingredient_denominator_kode,
-                                            },
-                                        }),
-                                        ...(medicationItem.ingredient_strength_denominator_value !==
-                                            null && {
-                                            denominator: {
-                                                value: medicationItem.ingredient_strength_denominator_value,
-                                                system: medicationItem.strength_denominator_system,
-                                                code: medicationItem.strength_denominator_code,
-                                            },
-                                        }),
-                                    },
-                                }),
-                            },
-                        ],
-                    }),
-                },
-                request: {
-                    method: "POST",
-                    url: "Medication",
-                },
-            });
-        });
-    }
-
-    if (Array.isArray(medicationDispense) && medicationDispense.length > 0) {
-        medicationDispense.forEach((medDisItem) => {
-            // Find the corresponding MedicationRequest from the processed peresepanObat bundle
-            const correspondingMedicationRequest =
-                dataMasterPasien.processed_resource?.peresepanObat?.find(
-                    (item: resourceTemplate) =>
-                        item.resource.resourceType === "MedicationRequest" &&
-                        (
-                            item.resource as MedicationRequestResource
-                        ).identifier?.some(
-                            (id) =>
-                                id.system ===
-                                    `http://sys-ids.kemkes.go.id/prescription-item/${medDisItem.org_id}` &&
-                                id.value === medDisItem.identifier_value_2,
-                        ),
-                );
-
-            let authorizingPrescriptionRef = null;
-            if (correspondingMedicationRequest?.fullUrl) {
-                const fullUrlParts =
-                    correspondingMedicationRequest.fullUrl.split(":");
-                authorizingPrescriptionRef = `MedicationRequest/${fullUrlParts[fullUrlParts.length - 1]}`;
+                    ...((medicationDataItem.racikan === "y" ||
+                        medicationDataItem.ingredient_racikan) &&
+                        medicationDataItem.ingredient_racikan && {
+                            ingredient: medicationDataItem.ingredient_racikan
+                                .map((ing_detail) => {
+                                    const ingredientEntry: any = {};
+                                    if (
+                                        ing_detail.ingredient_strength_kode !=
+                                        null
+                                    ) {
+                                        ingredientEntry.itemCodeableConcept = {
+                                            coding: [
+                                                {
+                                                    system: "http://sys-ids.kemkes.go.id/kfa",
+                                                    code: ing_detail.ingredient_strength_kode,
+                                                },
+                                            ],
+                                        };
+                                    }
+                                    ingredientEntry.isActive = true;
+                                    const strength: any = {};
+                                    if (
+                                        ing_detail.ingredient_strength_value !=
+                                        null
+                                    ) {
+                                        strength.numerator = {
+                                            value: ing_detail.ingredient_strength_value,
+                                        };
+                                    }
+                                    if (
+                                        ing_detail.ingredient_denominator_value !=
+                                            null &&
+                                        ing_detail.ingredient_denominator_kode !=
+                                            null
+                                    ) {
+                                        strength.denominator = {
+                                            value: ing_detail.ingredient_denominator_value,
+                                            code: ing_detail.ingredient_denominator_kode,
+                                        };
+                                        if (
+                                            ing_detail.ingredient_denominator_system !=
+                                            null
+                                        ) {
+                                            strength.denominator.system =
+                                                ing_detail.ingredient_denominator_system;
+                                        }
+                                    }
+                                    if (Object.keys(strength).length > 0) {
+                                        ingredientEntry.strength = strength;
+                                    }
+                                    return ingredientEntry;
+                                })
+                                .filter(
+                                    (entry) =>
+                                        entry.itemCodeableConcept &&
+                                        (entry.strength?.numerator ||
+                                            entry.strength?.denominator),
+                                ),
+                        }),
+                };
+                // Update display for medicationReference if code.coding[0].display is available
+                if (containedMedicationResource?.code?.coding?.[0]?.display) {
+                    medicationReferenceDisplay =
+                        containedMedicationResource.code.coding[0].display;
+                }
             }
 
+            const authorizingPrescriptionRef = medDisItem.medicationrequest_uuid
+                ? `MedicationRequest/${medDisItem.medicationrequest_uuid}`
+                : null;
+
+            const medicationDispenseUuid = v4();
             jsonMedicationDispense.push({
-                fullUrl: `urn:uuid:${v4()}`,
+                fullUrl: `urn:uuid:${medicationDispenseUuid}`,
                 resource: {
                     resourceType: "MedicationDispense",
                     identifier: [
@@ -195,8 +218,11 @@ export default async function pengirimanDataPengeluaranObat(
                         ],
                     },
                     medicationReference: {
-                        reference: `Medication/${medDisItem.medicationrequest_uuid}`,
-                        display: medDisItem.medicationreference_display,
+                        // Point to the contained resource if it exists
+                        reference: containedMedicationResource
+                            ? `#${containedMedicationResource.id}`
+                            : `#${medDisItem.medicationrequest_uuid}`, // Fallback to external reference
+                        display: medicationReferenceDisplay,
                     },
                     subject: {
                         reference: `Patient/${dataMasterPasien.patient_id}`,
@@ -343,41 +369,44 @@ export default async function pengirimanDataPengeluaranObat(
                             text: medDisItem.dosageinstruction_text,
                         },
                     ],
-                    dispenseRequest: {
-                        ...(medDisItem.dispenserequest_dispenseinterval_value && {
-                            dispenseInterval: {
-                                value: medDisItem.dispenserequest_dispenseinterval_value,
-                                unit: medDisItem.dispenserequest_dispenseinterval_unit,
-                                system: medDisItem.dispenserequest_dispenseinterval_system,
-                                code: medDisItem.dispenserequest_dispenseinterval_code,
-                            },
-                        }),
-                        ...(medDisItem.dispenserequest_quantity_unit && {
-                            quantity: {
-                                value: medDisItem.dispenserequest_quantity_value,
-                                unit: medDisItem.dispenserequest_quantity_unit,
-                                system: medDisItem.dispenserequest_quantity_system,
-                                code: medDisItem.dispenserequest_quantity_code,
-                            },
-                        }),
-                        expectedSupplyDuration: {
-                            value: medDisItem.dispenserequest_expectedsupplyduration_value,
-                            unit: medDisItem.dispenserequest_expectedsupplyduration_unit,
-                            system: medDisItem.dispenserequest_expectedsupplyduration_system,
-                            code: medDisItem.dispenserequest_expectedsupplyduration_code,
-                        },
-                        ...(medDisItem.dispenserequest_validityperiod_start &&
-                            medDisItem.dispenserequest_validityperiod_end && {
-                                validityPeriod: {
-                                    start: medDisItem.dispenserequest_validityperiod_start,
-                                    end: medDisItem.dispenserequest_validityperiod_end,
-                                },
-                            }),
-                    }, // Add authorizingPrescription if a reference was found
+                    // dispenseRequest: {
+                    //     ...(medDisItem.dispenserequest_dispenseinterval_value && {
+                    //         dispenseInterval: {
+                    //             value: medDisItem.dispenserequest_dispenseinterval_value,
+                    //             unit: medDisItem.dispenserequest_dispenseinterval_unit,
+                    //             system: medDisItem.dispenserequest_dispenseinterval_system,
+                    //             code: medDisItem.dispenserequest_dispenseinterval_code,
+                    //         },
+                    //     }),
+                    //     ...(medDisItem.dispenserequest_quantity_unit && {
+                    //         quantity: {
+                    //             value: medDisItem.dispenserequest_quantity_value,
+                    //             unit: medDisItem.dispenserequest_quantity_unit,
+                    //             system: medDisItem.dispenserequest_quantity_system,
+                    //             code: medDisItem.dispenserequest_quantity_code,
+                    //         },
+                    //     }),
+                    //     expectedSupplyDuration: {
+                    //         value: medDisItem.dispenserequest_expectedsupplyduration_value,
+                    //         unit: medDisItem.dispenserequest_expectedsupplyduration_unit,
+                    //         system: medDisItem.dispenserequest_expectedsupplyduration_system,
+                    //         code: medDisItem.dispenserequest_expectedsupplyduration_code,
+                    //     },
+                    //     ...(medDisItem.dispenserequest_validityperiod_start &&
+                    //         medDisItem.dispenserequest_validityperiod_end && {
+                    //             validityPeriod: {
+                    //                 start: medDisItem.dispenserequest_validityperiod_start,
+                    //                 end: medDisItem.dispenserequest_validityperiod_end,
+                    //             },
+                    //         }),
+                    // }, // Add authorizingPrescription if a reference was found
                     ...(authorizingPrescriptionRef && {
                         authorizingPrescription: [
                             { reference: authorizingPrescriptionRef },
                         ],
+                    }), // Add the contained Medication resource if it was constructed
+                    ...(containedMedicationResource && {
+                        contained: [containedMedicationResource],
                     }),
                 },
                 request: {

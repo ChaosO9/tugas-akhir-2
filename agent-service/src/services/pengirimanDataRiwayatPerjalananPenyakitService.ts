@@ -36,7 +36,8 @@ export default async function pengirimanDataRiwayatPerjalananPenyakitService(
                             display: `${riwayatPerjalananPenyakitItem.patient_name}`,
                         },
                         encounter: {
-                            reference: `Encounter/${riwayatPerjalananPenyakitItem.encounter}`,
+                            // reference: `Encounter/${riwayatPerjalananPenyakitItem.encounter}`,
+                            reference: `Encounter/${dataMasterPasien.encounter_id}`,
                         },
                         effectiveDateTime: new Date().toISOString,
                         date: new Date().toISOString,
@@ -44,19 +45,21 @@ export default async function pengirimanDataRiwayatPerjalananPenyakitService(
                             reference: `Practitioner/${riwayatPerjalananPenyakitItem.practitioner_id}`,
                         },
                         summary: `${riwayatPerjalananPenyakitItem.kesimpulan}`,
-                        prognosisCodeableConcept: {
-                            coding: [
-                                {
-                                    system: `${riwayatPerjalananPenyakitItem.prognosis_system}`,
-                                    code: `${riwayatPerjalananPenyakitItem.prognosis_kode}`,
-                                    display: `${riwayatPerjalananPenyakitItem.prognosis_nama}`,
-                                },
-                            ],
-                            text: {
-                                status: `${riwayatPerjalananPenyakitItem.status_nama}`,
-                                description: `${riwayatPerjalananPenyakitItem.deskripsi}`,
+                        prognosisCodeableConcept: [
+                            {
+                                coding: [
+                                    {
+                                        system: `${riwayatPerjalananPenyakitItem.prognosis_system}`,
+                                        code: `${riwayatPerjalananPenyakitItem.prognosis_kode}`,
+                                        display: `${riwayatPerjalananPenyakitItem.prognosis_nama}`,
+                                    },
+                                ],
+                                text: `
+                                    status: ${riwayatPerjalananPenyakitItem.status_nama},
+                                    description: ${riwayatPerjalananPenyakitItem.deskripsi},
+                                `,
                             },
-                        },
+                        ],
                         // investigation: [
                         //     `${}`
                         // ]

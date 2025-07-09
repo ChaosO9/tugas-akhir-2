@@ -7,11 +7,23 @@ import {
     serviceRequestLab,
     specimenLab,
 } from "../utils/interface";
+import AppError from "../utils/errorHandler"; // Import AppError
+import {
+    ClinicalImpressionResource,
+    ObservationResource,
+    resourceTemplate, // Import resourceTemplate
+    // ObservationResource, // No longer needed directly in return type
+    // ServiceRequestResource, // No longer needed directly in return type
+    // SpecimenResource, // No longer needed directly in return type
+    // DiagnosticReportResource is also handled by resourceTemplate
+} from "../utils/interfaceValidation";
+import { CodeableConcept, Quantity } from "../utils/interfaceFHIR";
 
 export default async function pengirimanDataPemeriksaanPenunjangLaboratoriumService(
     dataPenunjuangLab: dataPemeriksaanLab,
-): Promise<object[]> {
-    let jsonClinicalImpression = [] as object[];
+    dataMasterPasien: KunjunganRawatInap,
+): Promise<resourceTemplate[] | AppError> {
+    let jsonClinicalImpression: resourceTemplate[] = [];
 
     if (
         Array.isArray(dataPenunjuangLab.serviceRequest) &&
@@ -62,10 +74,11 @@ export default async function pengirimanDataPemeriksaanPenunjangLaboratoriumServ
                             reference: `Patient/${serviceRequestItem.patient_id}`,
                         },
                         encounter: {
-                            reference: `Encounter/${serviceRequestItem.encounter}`,
+                            // reference: `Encounter/${serviceRequestItem.encounter}`,
+                            reference: `Encounter/${dataMasterPasien.encounter_id}`,
                             display: `${serviceRequestItem.text}`,
                         },
-                        // occurrenceDateTime: "2022-12-26T16:30:00+00:00",
+                        occurrenceDateTime: `${dateTimeToUTC(serviceRequestItem.authoredon)}`,
                         authoredOn: `${dateTimeToUTC(serviceRequestItem.authoredon)}`,
                         requester: {
                             reference: `Practitioner/${serviceRequestItem.practitioner_id}`,
@@ -240,7 +253,7 @@ export default async function pengirimanDataPemeriksaanPenunjangLaboratoriumServ
                         identifier: [
                             {
                                 system: `http://sys-ids.kemkes.go.id/observation/${observationItem.org_id}`,
-                                value: observationItem.value,
+                                value: String(observationItem.value),
                             },
                         ],
                         basedOn: [
@@ -273,7 +286,8 @@ export default async function pengirimanDataPemeriksaanPenunjangLaboratoriumServ
                             reference: `Patient/${observationItem.patient_id}`,
                         },
                         encounter: {
-                            reference: `Encounter/${observationItem.encounter}`,
+                            // reference: `Encounter/${observationItem.encounter}`,
+                            reference: `Encounter/${dataMasterPasien.encounter_id}`,
                         },
                         effectiveDateTime: dateTimeToUTC(
                             observationItem.authoredon,
@@ -289,11 +303,11 @@ export default async function pengirimanDataPemeriksaanPenunjangLaboratoriumServ
                         ],
                         ...(hasil_lab.valueQuantity_value && {
                             valueQuantity: {
-                                value: hasil_lab.valueQuantity_value,
+                                value: Number(hasil_lab.valueQuantity_value),
                                 unit: hasil_lab.valueQuantity_unit,
                                 system: hasil_lab.valueQuantity_system,
                                 code: hasil_lab.valueQuantity_code,
-                            },
+                            } as Quantity,
                         }),
                         // interpretation: [
                         //     {
@@ -306,16 +320,19 @@ export default async function pengirimanDataPemeriksaanPenunjangLaboratoriumServ
                         //         ],
                         //     },
                         // ],
-                        valueCodeableConcept: {
-                            coding: [
-                                {
-                                    system: hasil_lab.valueCodeableConcept_coding_system,
-                                    code: hasil_lab.valueCodeableConcept_coding_code,
-                                    display:
-                                        hasil_lab.valueCodeableConcept_coding_display,
-                                },
-                            ],
-                        },
+                        ...(hasil_lab.valueCodeableConcept_coding_code !==
+                            null && {
+                            valueCodeableConcept: {
+                                coding: [
+                                    {
+                                        system: hasil_lab.valueCodeableConcept_coding_system,
+                                        code: hasil_lab.valueCodeableConcept_coding_code,
+                                        display:
+                                            hasil_lab.valueCodeableConcept_coding_display,
+                                    },
+                                ],
+                            } as CodeableConcept,
+                        }),
                         // specimen: {
                         //     reference: "Specimen/{{Specimen_Day1_id}}",
                         // },
@@ -338,19 +355,23 @@ export default async function pengirimanDataPemeriksaanPenunjangLaboratoriumServ
                                     //     code: "mg/dL",
                                     // },
                                     high: {
-                                        value: hasil_lab.referenceRange_high_value,
-                                        unit: hasil_lab.referenceRange_high_unit,
-                                        system: hasil_lab.referenceRange_high_sytem,
-                                        code: hasil_lab.referenceRange_high_code,
+                                        value: Number(
+                                            hasil_lab.referenceRange_high_value,
+                                        ),
+                                        unit: hasil_lab.referenceRange_high_unit!,
+                                        system: hasil_lab.referenceRange_high_sytem!,
+                                        code: hasil_lab.referenceRange_high_code!,
                                     },
                                     // text: "Borderline high",
                                 },
                                 {
                                     low: {
-                                        value: hasil_lab.referenceRange_low_value,
-                                        unit: hasil_lab.referenceRange_low_unit,
-                                        system: hasil_lab.referenceRange_low_sytem,
-                                        code: hasil_lab.referenceRange_low_code,
+                                        value: Number(
+                                            hasil_lab.referenceRange_low_value,
+                                        ),
+                                        unit: hasil_lab.referenceRange_low_unit!,
+                                        system: hasil_lab.referenceRange_low_sytem!,
+                                        code: hasil_lab.referenceRange_low_code!,
                                     },
                                     // text: "High",
                                 },
@@ -380,7 +401,7 @@ export default async function pengirimanDataPemeriksaanPenunjangLaboratoriumServ
                             {
                                 use: "official",
                                 system: `http://sys-ids.kemkes.go.id/diagnostic/${diagnosticItem.org_id}/lab`,
-                                value: diagnosticItem.value,
+                                value: String(diagnosticItem.value),
                             },
                         ],
                         basedOn: [
@@ -389,26 +410,32 @@ export default async function pengirimanDataPemeriksaanPenunjangLaboratoriumServ
                             },
                         ],
                         status: "final",
-                        category: [
-                            {
-                                coding: [
+                        ...(diagnosticItem.category_kode &&
+                            ({
+                                category: [
                                     {
-                                        system: diagnosticItem.category_link,
-                                        code: diagnosticItem.category_kode,
-                                        display: diagnosticItem.category_nama,
+                                        coding: [
+                                            {
+                                                system: diagnosticItem.category_link,
+                                                code: diagnosticItem.category_kode,
+                                                display:
+                                                    diagnosticItem.category_nama,
+                                            },
+                                        ],
                                     },
                                 ],
-                            },
-                        ],
+                            } as CodeableConcept)),
                         code: {
                             coding: [
                                 {
-                                    system: diagnosticItem.loinc_system,
-                                    code: diagnosticItem.loinc_code,
-                                    display: diagnosticItem.loinc_display,
+                                    system: diagnosticItem.loinc_system!,
+                                    code: diagnosticItem.loinc_code!,
+                                    display: diagnosticItem.loinc_display!,
                                 },
                             ],
-                            text: diagnosticItem.loinc_text,
+                            text: diagnosticItem.loinc_text
+                                ? diagnosticItem.loinc_text
+                                : "Hasil Pemeriksaan Laboratorium",
                         },
                         subject: {
                             reference: `Patient/${diagnosticItem.patient_id}`,

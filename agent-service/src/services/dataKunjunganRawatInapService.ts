@@ -6,6 +6,7 @@ import {
     EncounterResource,
     resourceTemplate,
 } from "../utils/interfaceValidation";
+import { v4 as uuidv4 } from "uuid";
 
 export default async function dataKunjunganRawatInapService(
     dataMasterPasien: KunjunganRawatInap,
@@ -15,13 +16,14 @@ export default async function dataKunjunganRawatInapService(
     LocationName: string,
 ): Promise<resourceTemplate> {
     const jsonEncounter: resourceTemplate = {
-        fullUrl: "urn:uuid:" + String(dataMasterPasien.encounter_id),
+        fullUrl: "urn:uuid:" + uuidv4(),
         resource: {
             resourceType: "Encounter",
             identifier: [
                 {
                     system: `http://sys-ids.kemkes.go.id/encounter/${OrganizationID}`,
-                    value: `${dataMasterPasien.registration_id}`,
+                    // value: `${dataMasterPasien.registration_id}`,
+                    value: `${uuidv4()}`,
                 },
             ],
             status: "finished",
