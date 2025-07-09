@@ -9,7 +9,12 @@ export const LogStatus = {
     SENT_SUCCESS: "SENT_SUCCESS", // Handled by sender
     SENT_FAILED: "SENT_FAILED", // Handled by sender
     PUBLISH_FAILED: "PUBLISH_FAILED", // Agent fails to publish
+    RETRY_INITIATED: "RETRY_INITIATED", // Agent is retrying this job with a new job_uuid
     ERROR: "ERROR", // General processing error in Agent
+    CRON_JOB_INITIATED: "CRON_JOB_INITIATED", // Cron job started
+    MANUAL_TRIGGER_INITIATED: "MANUAL_TRIGGER_INITIATED", // Manual API trigger started
+    CRON_JOB_ENCOUNTERS_FETCHED: "CRON_JOB_ENCOUNTERS_FETCHED", // Cron job successfully fetched encounters (or found none)
+    MANUAL_TRIGGER_ENCOUNTERS_FETCHED: "MANUAL_TRIGGER_ENCOUNTERS_FETCHED", // Manual trigger successfully fetched encounters (or found none)
 } as const; // Use 'as const' for stricter type checking
 
 export type LogStatusType = (typeof LogStatus)[keyof typeof LogStatus];
@@ -152,6 +157,48 @@ export async function updateLogFilePath(
     }
 }
 
+// --- Core Update Function (Internal) ---
+export async function updateLog(
+    job_uuid: string,
+    updates: Record<string, any>,
+): Promise<void> {
+    const setClauses = Object.keys(updates)
+        .map((key, index) => `${key} = $${index + 1}`)
+        .join(", ");
+    const params = Object.values(updates);
+    params.push(job_uuid); // Add job_uuid as the last parameter for WHERE clause
+
+    const query = `
+        UPDATE fhir_process_log
+        SET ${setClauses}
+        WHERE job_uuid = $${params.length};
+    `;
+
+    try {
+        const result = await db.query(query, params);
+        if (result.rowCount && result.rowCount > 0) {
+            console.log(
+                `Log entry updated for job_uuid: ${job_uuid} with keys: ${Object.keys(
+                    updates,
+                ).join(", ")}`,
+            );
+        } else {
+            console.warn(
+                `Attempted to update log for non-existent job_uuid: ${job_uuid}`,
+            );
+        }
+    } catch (error) {
+        console.error(
+            `Error updating log for job_uuid ${job_uuid}:`,
+            error,
+            "Query:",
+            query,
+            "Params:",
+            params,
+        );
+    }
+}
+
 export async function updateLogError(data: LogUpdateErrorInput): Promise<void> {
     const query = `
         UPDATE fhir_process_log
@@ -189,6 +236,52 @@ export async function updateLogError(data: LogUpdateErrorInput): Promise<void> {
             error,
         );
     }
+}
+
+// --- Function to get jobs for retry ---
+interface RetryJobData {
+    job_uuid: string;
+    bundle_json: object; // Assuming the bundle is stored as JSON
+    // Add other fields if needed for retry logic, e.g., current retry_count
+}
+
+export async function getJobsForRetry(
+    maxAgeDays: number,
+    limit: number = 100, // Default limit to prevent overwhelming the system
+): Promise<RetryJobData[]> {
+    const query = `
+          SELECT job_uuid, bundle_json
+          FROM fhir_process_log
+          WHERE status NOT IN ($1, $2, $3)
+            AND bundle_json IS NOT NULL
+            AND created_at >= NOW() - INTERVAL '${maxAgeDays} days'
+            -- Optional: Add a condition to avoid retrying too frequently if a job was just attempted
+            -- AND (last_attempt_at IS NULL OR last_attempt_at < NOW() - INTERVAL '1 hour')
+          ORDER BY created_at ASC -- Process older failed jobs first
+          LIMIT $4;
+      `;
+    const params = [
+        LogStatus.SENT_SUCCESS,
+        LogStatus.QUEUED,
+        LogStatus.PROCESSING,
+        limit,
+    ];
+    try {
+        const result = await db.query(query, params);
+        return result.rows as RetryJobData[];
+    } catch (error) {
+        console.error(`Error fetching jobs for retry:`, error);
+        return []; // Return empty array on error to prevent cron from failing catastrophically
+    }
+}
+
+export async function updateLogStatusQueued(data: {
+    job_uuid: string;
+}): Promise<void> {
+    await updateLog(data.job_uuid, {
+        status: LogStatus.QUEUED,
+        queued_at: new Date(),
+    });
 }
 
 // Specific function for publish failure if needed, or use updateLogError
