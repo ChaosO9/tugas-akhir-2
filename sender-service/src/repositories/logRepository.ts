@@ -8,6 +8,8 @@ export const LogStatus = {
     SENT_SUCCESS: "SENT_SUCCESS",
     SENT_FAILED: "SENT_FAILED",
     PUBLISH_FAILED: "PUBLISH_FAILED", // Handled by agent
+    DUPLICATE: "DUPLICATE", // Specific FHIR validation error
+    VALUE_ERROR: "VALUE_ERROR",
     ERROR: "ERROR", // General processing error
 } as const;
 

@@ -4,6 +4,7 @@ import Queue, { Job, DoneCallback } from "bee-queue";
 import { createClient, RedisClientType } from "redis";
 import axios from "axios";
 import NodeCache from "node-cache"; // <<< Import node-cache
+import dotenv from "dotenv";
 
 // Import logging functions and status constants
 import {
@@ -33,11 +34,13 @@ interface TokenResponse {
     token_type: string;
 }
 
+dotenv.config();
+
 // --- Constants ---
 const REDIS_URL = process.env.REDIS_URL || "redis://redis_server:6379";
 const JOB_CHANNEL = "job-channel";
 const QUEUE_NAME = "send-bundle-satusehat-jobs";
-const DATA_DIR = "/app/job_files/";
+const DATA_DIR = process.env.DATA_DIR || "/app/job_files/";
 
 const SATUSEHAT_AUTH_URL = process.env.SATUSEHAT_AUTH_URL;
 const SATUSEHAT_FHIR_URL = process.env.SATUSEHAT_FHIR_URL;
@@ -45,9 +48,13 @@ const SATUSEHAT_CLIENT_ID = process.env.SATUSEHAT_CLIENT_ID;
 const SATUSEHAT_CLIENT_SECRET = process.env.SATUSEHAT_CLIENT_SECRET;
 
 // --- Cache Setup ---
-const tokenCache = new NodeCache(); // <<< Initialize the cache
-const ACCESS_TOKEN_CACHE_KEY = "";
+const tokenCache = new NodeCache();
+const ACCESS_TOKEN_CACHE_KEY = "satusehat_access_token"; 
 const TOKEN_EXPIRY_BUFFER_SECONDS = 60; // Get new token 60s before actual expiry
+
+// --- Constants for Redis Connection Retry ---
+const MAX_REDIS_CONNECT_RETRIES = 1;
+const INITIAL_REDIS_RETRY_DELAY_MS = 3000; // Start with 3 second
 
 // --- Environment Variable Validation ---
 if (
@@ -69,7 +76,36 @@ const queue: Queue<JobData> = new Queue<JobData>(QUEUE_NAME, {
 });
 
 // --- Redis Client Setup (for Pub/Sub) ---
-const redisSubscriber = createClient({ url: REDIS_URL });
+const redisSubscriber = createClient({
+    url: REDIS_URL,
+    socket: {
+        reconnectStrategy: (retries: number) => {
+            // retries is the number of previous attempts (0-indexed)
+            if (retries >= MAX_REDIS_CONNECT_RETRIES) {
+                console.error(
+                    `[Redis Subscriber] Exhausted ${MAX_REDIS_CONNECT_RETRIES} reconnection attempts. Restarting application...`
+                );
+                // Asynchronously trigger shutdown. The process.exit within shutdown will terminate.
+                shutdown(1);
+                return new Error(
+                    "Max reconnection attempts reached. Application will restart."
+                ); // Stop redis-client from retrying further
+            }
+            const delay = Math.min(
+                INITIAL_REDIS_RETRY_DELAY_MS * Math.pow(2, retries),
+                30000
+            ); // Exponential backoff, max 30s
+            console.log(
+                `[Redis Subscriber] Reconnection attempt ${
+                    retries + 1
+                }/${MAX_REDIS_CONNECT_RETRIES} failed. Retrying in ${
+                    delay / 1000
+                }s...`
+            );
+            return delay;
+        },
+    },
+}) as RedisClientType;
 
 // --- Authentication Function (Modified for Caching) ---
 async function getAccessToken(): Promise<string> {
@@ -324,10 +360,36 @@ queue.process(async (job: Job<JobData>, done: DoneCallback<any>) => {
         console.error(`[${job_uuid}] Error processing job ${job.id}:`);
         let errorMessage = "Unknown processing error";
         let errorResponseData = null;
-        let logStatus: LogStatusType = LogStatus.SENT_FAILED;
+        let determinedLogStatus: string = LogStatus.SENT_FAILED; // Default to SENT_FAILED, can be string for combined
 
         if (axios.isAxiosError(error)) {
             errorMessage = `API request failed: ${error.message}`;
+            if (
+                error.response?.data?.resourceType === "OperationOutcome" &&
+                error.response.data.issue
+            ) {
+                const issues: any[] = error.response.data.issue;
+                let hasDuplicateError = false;
+                let hasValueError = false;
+                issues.forEach((issue) => {
+                    if (issue.code === "duplicate") {
+                        hasDuplicateError = true;
+                    }
+                    if (issue.code === "value") {
+                        hasValueError = true;
+                    }
+                });
+
+                if (hasDuplicateError && hasValueError) {
+                    determinedLogStatus = `${LogStatus.DUPLICATE} & ${LogStatus.VALUE_ERROR}`;
+                } else if (hasDuplicateError) {
+                    determinedLogStatus = LogStatus.DUPLICATE;
+                } else if (hasValueError) {
+                    determinedLogStatus = LogStatus.VALUE_ERROR;
+                }
+                // If neither, it remains SENT_FAILED or will be overridden below
+            }
+
             if (error.response) {
                 errorResponseData = error.response.data;
                 errorMessage += ` - Status ${
@@ -346,12 +408,12 @@ queue.process(async (job: Job<JobData>, done: DoneCallback<any>) => {
             error.message === "Failed to obtain SatuSehat access token."
         ) {
             errorMessage = error.message;
-            logStatus = LogStatus.ERROR; // Token error is not an API send failure
+            determinedLogStatus = LogStatus.ERROR; // Token error is not an API send failure
             console.error(`  Authentication failed.`);
         } else {
             errorMessage =
                 error instanceof Error ? error.message : String(error);
-            logStatus = LogStatus.ERROR; // Other unexpected errors
+            determinedLogStatus = LogStatus.ERROR; // Other unexpected errors
             console.error(`  Unexpected error: ${errorMessage}`);
         }
 
@@ -359,19 +421,56 @@ queue.process(async (job: Job<JobData>, done: DoneCallback<any>) => {
             job_uuid: job_uuid,
             error_message: errorMessage,
             response_json: errorResponseData,
-            status: logStatus,
+            status: determinedLogStatus as LogStatusType, // Cast if using combined string status
         });
-        console.error(`[${job_uuid}] Log status updated to ${logStatus}.`);
+        console.error(
+            `[${job_uuid}] Log status updated to ${determinedLogStatus}.`
+        );
 
         done(new Error(errorMessage));
     }
 });
 
+// --- Helper function for initial Redis connection with retries ---
+async function connectRedisWithRetries(
+    client: RedisClientType,
+    clientName: string
+): Promise<void> {
+    for (let attempt = 0; attempt < MAX_REDIS_CONNECT_RETRIES; attempt++) {
+        try {
+            await client.connect();
+            console.log(`${clientName} connected to Redis.`);
+            return; // Successfully connected
+        } catch (err) {
+            const currentAttemptNumber = attempt + 1;
+            const delay = INITIAL_REDIS_RETRY_DELAY_MS * Math.pow(2, attempt); // Exponential backoff
+
+            console.error(
+                `${clientName} Redis connection attempt ${currentAttemptNumber}/${MAX_REDIS_CONNECT_RETRIES} failed: ${
+                    (err as Error).message
+                }. Retrying in ${delay / 1000}s...`
+            );
+
+            if (currentAttemptNumber >= MAX_REDIS_CONNECT_RETRIES) {
+                console.error(
+                    `${clientName} Failed to connect to Redis after ${currentAttemptNumber} attempts. Restarting application...`
+                );
+                await shutdown(1); // Ensure shutdown is called, which will exit the process
+            }
+            await new Promise((resolve) => setTimeout(resolve, delay));
+        }
+    }
+    // Fallback if loop finishes (should be prevented by shutdown)
+    console.error(
+        `${clientName} Exhausted all Redis connection attempts without success. Forcing restart.`
+    );
+    await shutdown(1);
+}
+
 // --- Service Initialization ---
 async function startService() {
     try {
-        await redisSubscriber.connect();
-        console.log("Redis subscriber connected.");
+        await connectRedisWithRetries(redisSubscriber, "Redis Subscriber");
         await redisSubscriber.subscribe(JOB_CHANNEL, handleRedisMessage);
         console.log(`Subscribed to "${JOB_CHANNEL}" on Redis Pub/Sub.`);
         console.log(
@@ -401,9 +500,9 @@ async function startService() {
 }
 
 // --- Graceful Shutdown ---
-async function shutdown() {
+async function shutdown(forcedExitCode?: number) {
     console.log("Shutting down sender service...");
-    let exitCode = 0;
+    let calculatedExitCode = 0;
 
     if (redisSubscriber.isOpen) {
         try {
@@ -413,9 +512,9 @@ async function shutdown() {
             console.log("Redis subscriber disconnected.");
         } catch (err) {
             console.error("Error during Redis subscriber shutdown:", err);
-            exitCode = 1;
+            calculatedExitCode = 1;
         }
-    }
+    } // Note: `exitCode` here was a typo, should be `calculatedExitCode`
 
     try {
         console.log("Closing Bee-Queue (waiting up to 30s for active jobs)...");
@@ -423,24 +522,26 @@ async function shutdown() {
         console.log("Bee-Queue closed.");
     } catch (err) {
         console.error("Error closing Bee-Queue:", err);
-        exitCode = 1;
+        calculatedExitCode = 1;
     }
 
     // Clear cache on shutdown (optional, as it's in-memory anyway)
     tokenCache.flushAll();
     console.log("Token cache flushed.");
 
-    console.log(`Shutdown complete with exit code ${exitCode}.`);
-    process.exit(exitCode);
+    const finalExitCode =
+        forcedExitCode !== undefined ? forcedExitCode : calculatedExitCode;
+    console.log(`Shutdown complete. Exiting with code ${finalExitCode}.`);
+    process.exit(finalExitCode);
 }
 
 process.on("SIGTERM", () => {
     console.info("SIGTERM signal received. Initiating shutdown...");
-    shutdown();
+    shutdown(0); // Graceful exit code 0 for SIGTERM
 });
 process.on("SIGINT", () => {
     console.info("SIGINT signal received. Initiating shutdown...");
-    shutdown();
+    shutdown(0); // Graceful exit code 0 for SIGINT
 });
 
 // --- Start the Service ---
