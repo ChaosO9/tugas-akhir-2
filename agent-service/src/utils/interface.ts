@@ -11,9 +11,10 @@ export interface KunjunganRawatInap {
     practitioner_name: string;
     period_start: string;
     period_end: string;
-    diagnosa: Diagnosa[];
+    diagnosa: Diagnosa[] | ConditionRow[];
     location_poli_id: string;
-    unit_nama: string;
+    unit_nama: string; // Added missing semicolon
+    processed_resource?: ProcessedResourcesBundle;
 }
 
 export interface Diagnosa {
@@ -340,4 +341,409 @@ export interface JobDetails {
     y: number;
     // Add other expected properties of your job data here
     description?: string; // Example optional field
+}
+
+import {
+    Coding,
+    SimpleQuantity,
+    Identifier,
+    Period,
+    Reference, // Already imported, but good to note
+    CodeableConcept,
+    Annotation,
+} from "./interfaceFHIR";
+// Import FHIR resource types from interfaceValidation.ts
+// These define the structure of the 'data' field in the DbRow interfaces
+import {
+    ObservationResource,
+    CarePlanResource,
+    ServiceRequestResource,
+    DiagnosticReportResource,
+    QuestionnaireResponseResource,
+    RiskAssessmentResource,
+    ClinicalImpressionResource, // Added for Prognosis
+    CompositionResource, // Added for Resume Medis
+    ProcedureResource, // Added for Tindakan/Prosedur Medis
+    GoalResource, // Added for Tujuan Perawatan
+    NutritionOrderResource,
+    ConditionResource,
+    MedicationAdministrationResource,
+    MedicationResource,
+    EncounterResource,
+    resourceTemplate, // Added for Diet
+} from "./interfaceValidation";
+
+export interface DietDbRow {
+    id: number;
+    resource_type: "NutritionOrder";
+    fhir_id: string;
+    patient_ihs_id: string;
+    module_tag: string;
+    create_db_at: string;
+    last_update: string;
+    encounter_id: string;
+    data: NutritionOrderResource; // Parsed FHIR NutritionOrder resource
+}
+
+// Renaming EdukasiRow to EdukasiDbRow and aligning with DbRow pattern
+export interface EdukasiDbRow {
+    id: number;
+    resource_type: "Procedure"; // Edukasi is often represented as a Procedure
+    fhir_id: string;
+    patient_ihs_id: string;
+    module_tag: string;
+    create_db_at: string;
+    last_update: string;
+    encounter_id: string;
+    data: ProcedureResource; // Parsed FHIR Procedure resource
+}
+
+// Renaming InstruksiMedikKeperawatanRow to InstruksiMedikKeperawatanDbRow
+export interface InstruksiMedikKeperawatanDbRow {
+    id: number;
+    resource_type: "CarePlan"; // Instruksi Medik/Keperawatan often maps to CarePlan
+    fhir_id: string;
+    patient_ihs_id: string;
+    module_tag: string;
+    create_db_at: string;
+    last_update: string;
+    encounter_id: string;
+    data: CarePlanResource; // Parsed FHIR CarePlan resource
+}
+
+// Renaming InstruksiTindakLanjutRow to InstruksiTindakLanjutDbRow
+export interface InstruksiTindakLanjutDbRow {
+    id: number;
+    resource_type: "ServiceRequest"; // Instruksi Tindak Lanjut often maps to ServiceRequest
+    fhir_id: string;
+    patient_ihs_id: string;
+    module_tag: string;
+    create_db_at: string;
+    last_update: string;
+    encounter_id: string;
+    data: ServiceRequestResource; // Parsed FHIR ServiceRequest resource
+}
+
+// Renaming KondisiSaatPulangRow to KondisiSaatPulangDbRow
+export interface KondisiSaatPulangDbRow {
+    id: number;
+    resource_type: "Condition"; // Kondisi often maps to Condition
+    fhir_id: string;
+    patient_ihs_id: string;
+    module_tag: string;
+    create_db_at: string;
+    last_update: string;
+    encounter_id: string;
+    data: ConditionResource; // Parsed FHIR Condition resource
+}
+
+// This is the new DbRow structure for Medication Administration Pemberian Obat
+export interface MedicationAdministrationPemberianObatDbRow {
+    id: number;
+    resource_type: "MedicationAdministration";
+    fhir_id: string; // This would be the ID of the MedicationAdministration resource
+    patient_ihs_id: string;
+    module_tag: string;
+    create_db_at: string;
+    last_update: string;
+    encounter_id: string;
+    data: MedicationAdministrationResource; // Parsed FHIR MedicationAdministration resource
+    // The contained/referenced Medication would be part of data.contained or data.medicationReference
+}
+
+export interface MedicationPemberianObatDbRow {
+    id: number;
+    resource_type: "Medication";
+    fhir_id: string; // This would be the ID of the MedicationAdministration resource
+    patient_ihs_id: string;
+    module_tag: string;
+    create_db_at: string;
+    last_update: string;
+    encounter_id: string;
+    data: MedicationResource; // Parsed FHIR MedicationAdministration resource
+    // The contained/referenced Medication would be part of data.contained or data.medicationReference
+}
+
+export interface DataPemberianObatFromRepo {
+    medicationAdministration: MedicationAdministrationPemberianObatDbRow[];
+    medication: MedicationPemberianObatDbRow[];
+}
+
+// Raw row structure for ServiceRequest data from the repository for Radiology
+// These fields are assumed to be present in the rows returned by `dapatkanDataPemeriksaanPenunjangRadiologi`
+// for resource_type = 'ServiceRequest' and module_tag LIKE '%Pemeriksaan Penunjang Radiologi%'.
+// The actual column names from `_interoperability-agent` table should be mapped here.
+export interface ServiceRequestRadiologiDbRow {
+    id: number;
+    resource_type: "ServiceRequest"; // Literal type
+    fhir_id: string; // UUID of the FHIR resource
+    patient_ihs_id: string;
+    module_tag: string;
+    create_db_at: string; // Or Date
+    last_update: string; // Or Date
+    encounter_id: string;
+    data: ServiceRequestResource; // Parsed FHIR ServiceRequest resource
+}
+
+// Renaming PemeriksaanFungsionalRow to PemeriksaanFungsionalDbRow
+export interface PemeriksaanFungsionalDbRow {
+    id: number;
+    resource_type: "Observation"; // Pemeriksaan Fungsional often maps to Observation
+    fhir_id: string;
+    patient_ihs_id: string;
+    module_tag: string;
+    create_db_at: string;
+    last_update: string;
+    encounter_id: string;
+    data: ObservationResource; // Parsed FHIR Observation resource
+}
+
+// Represents a row from the "_interoperability-agent" table for Tindakan/Prosedur Medis (ServiceRequest part)
+export interface ServiceRequestTindakanDbRow {
+    id: number;
+    resource_type: "ServiceRequest"; // Literal type
+    fhir_id: string; // UUID of the FHIR resource
+    patient_ihs_id: string;
+    module_tag: string;
+    create_db_at: string; // Or Date
+    last_update: string; // Or Date
+    encounter_id: string;
+    data: ServiceRequestResource; // Parsed FHIR ServiceRequest resource
+}
+
+// Represents a row from the "_interoperability-agent" table for Tindakan/Prosedur Medis (Procedure part)
+export interface ProcedureTindakanDbRow {
+    id: number;
+    resource_type: "Procedure"; // Literal type
+    fhir_id: string; // UUID of the FHIR resource
+    // ... other common columns ...
+    data: ProcedureResource; // Parsed FHIR Procedure resource
+}
+
+// Represents a row from the "_interoperability-agent" table for Tindakan/Prosedur Medis (Observation part)
+export interface ObservationTindakanDbRow {
+    id: number;
+    resource_type: "Observation"; // Literal type
+    fhir_id: string; // UUID of the FHIR resource
+    // ... other common columns ...
+    data: ObservationResource; // Parsed FHIR Observation resource
+}
+
+export interface DataTindakanProsedurMedisFromRepo {
+    serviceRequest: ServiceRequestTindakanDbRow[];
+    procedure: ProcedureTindakanDbRow[];
+    observation: ObservationTindakanDbRow[];
+}
+
+// Represents a row from the "_interoperability-agent" table for Tujuan Perawatan
+export interface TujuanPerawatanDbRow {
+    id: number;
+    resource_type: "Goal"; // Literal type
+    fhir_id: string; // UUID of the FHIR resource
+    patient_ihs_id: string;
+    module_tag: string;
+    create_db_at: string; // Or Date
+    last_update: string; // Or Date
+    encounter_id: string; // Though Goal is not directly tied to Encounter in FHIR, your table might have it
+    data: GoalResource; // Parsed FHIR Goal resource
+}
+
+// Represents a row from the "_interoperability-agent" table for Resume Medis
+export interface ResumeMedisDbRow {
+    id: number;
+    resource_type: "Composition"; // Literal type
+    fhir_id: string; // UUID of the FHIR resource
+    patient_ihs_id: string;
+    module_tag: string;
+    create_db_at: string; // Or Date
+    last_update: string; // Or Date
+    encounter_id: string;
+    data: CompositionResource; // Parsed FHIR Composition resource
+}
+
+// Raw row structure for Observation data from the repository for Radiology
+export interface ObservationRadiologiDbRow {
+    id: number;
+    resource_type: "Observation"; // Literal type
+    fhir_id: string; // UUID of the FHIR resource
+    patient_ihs_id: string;
+    module_tag: string;
+    create_db_at: string; // Or Date
+    last_update: string; // Or Date
+    encounter_id: string;
+    data: ObservationResource;
+}
+
+// Raw row structure for DiagnosticReport data from the repository for Radiology
+export interface DiagnosticReportRadiologiDbRow {
+    id: number;
+    resource_type: "DiagnosticReport"; // Literal type
+    fhir_id: string; // UUID of the FHIR resource
+    patient_ihs_id: string;
+    module_tag: string;
+    create_db_at: string; // Or Date
+    last_update: string; // Or Date
+    encounter_id: string;
+    data: DiagnosticReportResource; // Parsed FHIR DiagnosticReport resource
+    // pemeriksaan_radiologi_correlation_id?: string; // For linking back to a ServiceRequest
+}
+
+// This interface represents the direct output of the
+// `dapatkanDataPemeriksaanPenunjangRadiologi` repository.
+// The `pengirimanDataPemeriksaanPenunjangRadiologiService` will consume this.
+export interface DataPemeriksaanRadiologiFromRepo {
+    serviceRequest: ServiceRequestRadiologiDbRow[];
+    observation: ObservationRadiologiDbRow[];
+    diagnosticReport: DiagnosticReportRadiologiDbRow[];
+}
+
+// Represents a row from the "_interoperability-agent" table for discharge Observations
+export interface ObservationPemulanganDbRow {
+    id: number;
+    resource_type: "Observation"; // Literal type
+    fhir_id: string; // UUID of the FHIR resource
+    patient_ihs_id: string;
+    module_tag: string;
+    create_db_at: string; // Or Date, depending on DB driver
+    last_update: string; // Or Date
+    encounter_id: string;
+    data: ObservationResource; // Parsed FHIR Observation resource
+    // Add any other columns selected by `SELECT *` from `_interoperability-agent` if needed
+}
+
+// Represents a row from the "_interoperability-agent" table for discharge CarePlans
+export interface CarePlanPemulanganDbRow {
+    id: number;
+    resource_type: "CarePlan"; // Literal type
+    fhir_id: string; // UUID of the FHIR resource
+    patient_ihs_id: string;
+    module_tag: string;
+    create_db_at: string; // Or Date
+    last_update: string; // Or Date
+    encounter_id: string;
+    data: CarePlanResource; // Parsed FHIR CarePlan resource
+    // Add any other columns selected by `SELECT *` from `_interoperability-agent` if needed
+}
+
+// This interface represents the direct output of the
+// `dapatkanDataPemulanganPasien` repository.
+// The `pengirimanDataPemulanganPasienService` will consume this.
+export interface DataPemulanganPasienFromRepo {
+    observation: ObservationPemulanganDbRow[];
+    carePlan: CarePlanPemulanganDbRow[];
+}
+
+// Represents a row from the "_interoperability-agent" table for Pengkajian Resep
+export interface PengkajianResepDbRow {
+    id: number;
+    resource_type: "QuestionnaireResponse"; // Literal type
+    fhir_id: string; // UUID of the FHIR resource
+    patient_ihs_id: string;
+    module_tag: string;
+    create_db_at: string; // Or Date
+    last_update: string; // Or Date
+    encounter_id: string;
+    data: QuestionnaireResponseResource; // Parsed FHIR QuestionnaireResponse resource
+}
+
+// Data structure for the service if it were to consume an array of these rows
+// export interface DataPengkajianResepFromRepo {
+//     questionnaireResponse: PengkajianResepDbRow[];
+// }
+
+// Represents a row from the "_interoperability-agent" table for Penilaian Risiko
+export interface PenilaianRisikoDbRow {
+    id: number;
+    resource_type: "RiskAssessment"; // Literal type
+    fhir_id: string; // UUID of the FHIR resource
+    patient_ihs_id: string;
+    module_tag: string;
+    create_db_at: string; // Or Date
+    last_update: string; // Or Date
+    encounter_id: string;
+    data: RiskAssessmentResource; // Parsed FHIR RiskAssessment resource
+}
+
+// Represents a row from the "_interoperability-agent" table for Prognosis
+export interface PrognosisDbRow {
+    id: number;
+    resource_type: "ClinicalImpression"; // Literal type
+    fhir_id: string; // UUID of the FHIR resource
+    patient_ihs_id: string;
+    module_tag: string;
+    create_db_at: string; // Or Date
+    last_update: string; // Or Date
+    encounter_id: string;
+    data: ClinicalImpressionResource; // Parsed FHIR ClinicalImpression resource
+}
+
+// Represents a row from the "_interoperability-agent" table for Rasional Klinis
+export interface RasionalKlinisDbRow {
+    id: number;
+    resource_type: "ClinicalImpression"; // Literal type
+    fhir_id: string; // UUID of the FHIR resource
+    patient_ihs_id: string;
+    module_tag: string;
+    create_db_at: string; // Or Date
+    last_update: string; // Or Date
+    encounter_id: string;
+    data: ClinicalImpressionResource; // Parsed FHIR ClinicalImpression resource
+}
+
+// Represents a row from the "_interoperability-agent" table for Rencana Tindak Lanjut
+export interface RencanaTindakLanjutDbRow {
+    id: number;
+    resource_type: "ServiceRequest"; // Literal type
+    fhir_id: string; // UUID of the FHIR resource
+    patient_ihs_id: string;
+    module_tag: string;
+    create_db_at: string; // Or Date
+    last_update: string; // Or Date
+    encounter_id: string;
+    data: ServiceRequestResource; // Parsed FHIR ServiceRequest resource
+}
+
+// Define the structure for the processed resources bundle
+// This object will hold the results (arrays of resourceTemplate) from each service
+export interface ProcessedResourcesBundle {
+    kunjunganRawatInap?: resourceTemplate[]; // Assuming dataKunjunganRawatInapService returns resourceTemplate[] (even if it's just one item)
+    anamnesis?: resourceTemplate[]; // Contains Condition and AllergyIntolerance
+    pemeriksaanFisik?: resourceTemplate[]; // Contains Observation
+    peresepanObat?: resourceTemplate[]; // Contains Medication and MedicationRequest
+    pengeluaranObat?: resourceTemplate[]; // Contains Medication and MedicationDispense
+    pemeriksaanLab?: resourceTemplate[]; // Contains ServiceRequest, Specimen, Observation, DiagnosticReport
+    diagnosis?: resourceTemplate[]; // Contains Condition
+    diet?: resourceTemplate[]; // Contains NutritionOrder
+    edukasi?: resourceTemplate[]; // Contains Procedure
+    instruksiMedikKeperawatan?: resourceTemplate[]; // Contains CarePlan
+    instruksiTindakLanjutRujuk?: resourceTemplate[]; // Contains ServiceRequest
+    kondisiSaatPulang?: resourceTemplate[]; // Contains Condition
+    pemberianObat?: resourceTemplate[]; // Contains MedicationAdministration (and potentially contained Medication)
+    pemeriksaanFungsional?: resourceTemplate[]; // Contains Observation
+    pemeriksaanRadiologi?: resourceTemplate[]; // Contains ServiceRequest, Observation, DiagnosticReport
+    pemulanganPasien?: resourceTemplate[]; // Contains Observation, CarePlan
+    pengkajianResep?: resourceTemplate[]; // Contains QuestionnaireResponse
+    penilaianRisiko?: resourceTemplate[]; // Contains RiskAssessment
+    prognosis?: resourceTemplate[]; // Contains ClinicalImpression
+    rasionalKlinis?: resourceTemplate[]; // Contains ClinicalImpression
+    rencanaTindakLanjut?: resourceTemplate[]; // Contains ServiceRequest
+    resumeMedis?: resourceTemplate[]; // Contains Composition
+    tindakanProsedurMedis?: resourceTemplate[]; // Contains ServiceRequest, Procedure, Observation
+    tujuanPerawatan?: resourceTemplate[]; // Contains Goal
+    caraKeluarRumahSakit?: resourceTemplate[]; // Contains Encounter (Discharge)
+}
+
+// Add this to interface.ts
+// if it's not already defined or if you need a specific one for this service.
+// This assumes your DB stores a full Encounter resource in the 'data' column for these records.
+export interface CaraKeluarDbRow {
+    id: number; // Database primary key
+    resource_type: "Encounter";
+    fhir_id: string; // FHIR ID of this Encounter resource (e.g., from dataBundle.jsonc TS-27)
+    patient_ihs_id: string;
+    module_tag: string; // e.g., "Cara Keluar dari Rumah Sakit"
+    create_db_at: string;
+    last_update: string;
+    encounter_id: string; // ID of the primary encounter this discharge is related to
+    data: EncounterResource; // Parsed FHIR Encounter resource from DB
 }

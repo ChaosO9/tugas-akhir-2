@@ -343,6 +343,7 @@ export interface Dosage {
 export interface Extension {
     url: string; // uri
     value?: any; // any
+    valueCodeableConcept?: CodeableConcept; // CodeableConcept
 }
 
 // Meta

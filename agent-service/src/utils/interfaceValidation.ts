@@ -9,8 +9,11 @@ import {
     Duration,
     Extension,
     Identifier,
+    Meta,
+    Narrative,
     Period,
     Quantity,
+    Range,
     Ratio,
     Reference,
     SampledData,
@@ -30,7 +33,17 @@ export interface resourceTemplate {
         | SpecimenResource
         | DiagnosticReportResource
         | MedicationRequestResource
-        | MedicationDispenseResource;
+        | MedicationDispenseResource
+        | CarePlanResource
+        | ServiceRequestResource
+        | ConditionResource
+        | MedicationAdministrationResource
+        | QuestionnaireResponseResource
+        | RiskAssessmentResource
+        | CompositionResource
+        | ProcedureResource
+        | GoalResource
+        | NutritionOrderResource; // Added NutritionOrderResource
     request: requestHttp;
 }
 
@@ -40,7 +53,8 @@ interface requestHttp {
 }
 
 // Observation
-interface ObservationResource {
+export interface ObservationResource {
+    resourceType: "Observation"; // Added to explicitly define the resource type
     identifier?: Identifier[]; // Identifier[]
     basedOn?: Reference[]; // Reference[]
     partOf?: Reference[]; // Reference[]
@@ -110,7 +124,8 @@ interface ObservationComponent {
 }
 
 // Medication
-interface MedicationResource {
+export interface MedicationResource {
+    resourceType: "Medication"; // Added to explicitly define the resource type
     identifier?: Identifier[]; // Identifier[]
     code?: CodeableConcept; // CodeableConcept
     status?: string; // code
@@ -120,6 +135,8 @@ interface MedicationResource {
     ingredient?: MedicationIngredient[]; // MedicationIngredient[]
     batch?: MedicationBatch; // MedicationBatch
     extension?: Extension[]; // Extension[]
+    meta?: Meta;
+    id?: string;
 }
 
 // MedicationIngredient
@@ -212,6 +229,7 @@ interface EncounterLocation {
 
 // AllergyIntolerance
 interface AllergyIntoleranceResource {
+    resourceType: "AllergyIntolerance"; // Added to explicitly define the resource type
     identifier?: Identifier[]; // Identifier[]
     clinicalStatus?: CodeableConcept; // CodeableConcept
     verificationStatus?: CodeableConcept; // CodeableConcept
@@ -246,7 +264,8 @@ interface AllergyIntoleranceReaction {
 }
 
 // ClinicalImpression
-interface ClinicalImpressionResource {
+export interface ClinicalImpressionResource {
+    resourceType: "ClinicalImpression"; // Added to explicitly define the resource type
     identifier?: Identifier[]; // Identifier[]
     status: string; // code
     statusReason?: CodeableConcept; // CodeableConcept
@@ -284,7 +303,8 @@ interface ClinicalImpressionFinding {
 }
 
 // ServiceRequest
-interface ServiceRequestResource {
+export interface ServiceRequestResource {
+    resourceType: "ServiceRequest"; // Added to explicitly define the resource type
     identifier?: Identifier[]; // Identifier[]
     instantiatesCanonical?: string[]; // canonical[]
     instantiatesUri?: string[]; // uri[]
@@ -308,7 +328,7 @@ interface ServiceRequestResource {
     occurrenceTiming?: Timing; // Timing
     asNeededBoolean?: boolean; // boolean
     asNeededCodeableConcept?: CodeableConcept; // CodeableConcept
-    authoredOn?: string; // dateTime
+    authoredOn?: string | Date; // dateTime
     requester?: Reference; // Reference
     performerType?: CodeableConcept; // CodeableConcept
     performer?: Reference[]; // Reference[]
@@ -326,7 +346,8 @@ interface ServiceRequestResource {
 }
 
 // Specimen
-interface SpecimenResource {
+export interface SpecimenResource {
+    resourceType: "Specimen"; // Added to explicitly define the resource type
     identifier?: Identifier[]; // Identifier[]
     accessionIdentifier?: Identifier; // Identifier
     status: string; // code
@@ -384,7 +405,8 @@ interface SpecimenContainer {
 }
 
 // DiagnosticReport
-interface DiagnosticReportResource {
+export interface DiagnosticReportResource {
+    resourceType: "DiagnosticReport"; // Added to explicitly define the resource type
     identifier?: Identifier[]; // Identifier[]
     basedOn?: Reference[]; // Reference[]
     status: string; // code
@@ -413,7 +435,8 @@ interface DiagnosticReportMedia {
 }
 
 // MedicationRequest
-interface MedicationRequestResource {
+export interface MedicationRequestResource {
+    resourceType: "MedicationRequest"; // Added to explicitly define the resource type
     identifier?: Identifier[]; // Identifier[]
     status: string; // code
     statusReason?: CodeableConcept; // CodeableConcept
@@ -426,7 +449,7 @@ interface MedicationRequestResource {
     encounter?: Reference; // Reference
     authoredOn?: string; // dateTime
     requester?: Reference; // Reference
-    performer?: Reference[]; // Reference[]
+    performer?: Reference[] | Reference; // Reference[]
     performerType?: CodeableConcept; // CodeableConcept
     recorder?: Reference; // Reference
     reasonCode?: CodeableConcept[]; // CodeableConcept[]
@@ -442,7 +465,7 @@ interface MedicationRequestResource {
 }
 
 // MedicationRequestDispenseRequest
-interface MedicationRequestDispenseRequest {
+export interface MedicationRequestDispenseRequest {
     dispenseInterval?: Duration; // Duration
     validityPeriod?: Period; // Period
     numberOfRepeatsAllowed?: number; // unsignedInt
@@ -458,6 +481,7 @@ interface MedicationRequestSubstitution {
 
 // MedicationDispense
 interface MedicationDispenseResource {
+    resourceType: "MedicationDispense"; // Added to explicitly define the resource type
     identifier?: Identifier[]; // Identifier[]
     partOf?: Reference[]; // Reference[]
     status: string; // code
@@ -488,4 +512,326 @@ interface MedicationDispenseSubstitution {
     type?: CodeableConcept; // CodeableConcept
     reason?: CodeableConcept[]; // CodeableConcept[]
     responsibleParty?: Reference[]; // Reference[]
+}
+
+// CarePlan
+export interface CarePlanResource {
+    resourceType: "CarePlan";
+    status: string; // code
+    intent: string; // code
+    category?: CodeableConcept[];
+    title?: string;
+    description?: string;
+    subject: Reference;
+    encounter?: Reference;
+    created?: string; // dateTime
+    author?: Reference;
+    goal?: Reference[];
+}
+
+// NutritionOrder
+export interface NutritionOrderResource {
+    resourceType: "NutritionOrder";
+    status: string; // code
+    intent: string; // code
+    patient: Reference;
+    encounter?: Reference;
+    dateTime: string; // dateTime
+    orderer?: Reference;
+    excludeFoodModifier?: CodeableConcept[];
+    oralDiet?: NutritionOrderOralDiet;
+}
+
+interface NutritionOrderOralDiet {
+    type?: CodeableConcept[];
+    nutrient?: NutritionOrderNutrient[];
+    // instruction?: string; // Optional
+}
+
+interface NutritionOrderNutrient {
+    modifier?: CodeableConcept;
+    amount?: SimpleQuantity;
+}
+
+// ConditionOrder
+export interface ConditionResource {
+    resourceType: "Condition";
+    clinicalStatus?: CodeableConcept;
+    category?: CodeableConcept[];
+    code: CodeableConcept;
+    subject: Reference;
+    encounter: Reference;
+    onsetDateTime?: string; // dateTime
+    recordedDate?: string; // dateTime
+    recorder?: Reference;
+    // note?: Annotation[]; // Optional, not consistently used in services
+}
+
+// MedicationAdministration
+export interface MedicationAdministrationResource {
+    resourceType: "MedicationAdministration";
+    contained?: MedicationResource[]; // Can contain a Medication resource
+    status: string; // code
+    category?: CodeableConcept; // Service creates one CodeableConcept
+    medicationReference: Reference; // Can also be medicationCodeableConcept
+    subject: Reference;
+    context?: Reference; // Typically Encounter
+    effectivePeriod?: Period; // Or effectiveDateTime
+    performer?: MedicationAdministrationPerformer[];
+    reasonCode?: CodeableConcept[]; // Service creates an array of CodeableConcepts
+    request?: Reference; // MedicationRequest
+    dosage?: MedicationAdministrationDosage;
+}
+
+interface MedicationAdministrationPerformer {
+    actor: Reference;
+    // function?: CodeableConcept; // Optional, as per FHIR
+}
+
+interface MedicationAdministrationDosage {
+    route?: CodeableConcept;
+    dose?: SimpleQuantity;
+    // text?: string; // Optional
+    // site?: CodeableConcept; // Optional
+    // method?: CodeableConcept; // Optional
+    // rateRatio?: Ratio; // Optional for more complex dosages
+    // rateQuantity?: SimpleQuantity; // Optional for more complex dosages
+}
+
+// QuestionnaireResponse
+export interface QuestionnaireResponseResource {
+    resourceType: "QuestionnaireResponse";
+    identifier?: Identifier;
+    basedOn?: Reference[];
+    partOf?: Reference[];
+    questionnaire?: string; // canonical | uri
+    status: string; // code
+    subject?: Reference;
+    encounter?: Reference;
+    authored?: string; // dateTime
+    author?: Reference;
+    source?: Reference;
+    item?: QuestionnaireResponseItem[];
+}
+
+interface QuestionnaireResponseItem {
+    linkId: string;
+    definition?: string; // uri
+    text?: string;
+    answer?: QuestionnaireResponseItemAnswer[];
+    item?: QuestionnaireResponseItem[]; // For nested items
+}
+
+interface QuestionnaireResponseItemAnswer {
+    valueBoolean?: boolean;
+    valueDecimal?: number;
+    valueInteger?: number;
+    valueDate?: string; // date
+    valueDateTime?: string; // dateTime
+    valueTime?: string; // time
+    valueString?: string;
+    valueUri?: string; // uri
+    valueAttachment?: Attachment;
+    valueCoding?: Coding;
+    valueQuantity?: Quantity;
+    valueReference?: Reference;
+    item?: QuestionnaireResponseItem[]; // For nested answers with sub-items
+}
+
+// RiskAssessment
+export interface RiskAssessmentResource {
+    resourceType: "RiskAssessment";
+    identifier?: Identifier[];
+    basedOn?: Reference;
+    parent?: Reference;
+    status: string; // code
+    method?: CodeableConcept;
+    code?: CodeableConcept;
+    subject: Reference;
+    encounter?: Reference;
+    occurrenceDateTime?: string; // dateTime
+    occurrencePeriod?: Period;
+    condition?: Reference;
+    performer?: Reference;
+    reasonCode?: CodeableConcept[];
+    reasonReference?: Reference[];
+    basis?: Reference[];
+    prediction?: RiskAssessmentPrediction[];
+    mitigation?: string;
+    note?: Annotation[];
+}
+
+interface RiskAssessmentPrediction {
+    outcome?: CodeableConcept;
+    probabilityDecimal?: number; // decimal (0 to 1)
+    probabilityRange?: Range;
+    qualitativeRisk?: CodeableConcept;
+    relativeRisk?: number; // decimal
+    whenPeriod?: Period;
+    whenRange?: Range;
+    rationale?: string;
+}
+
+// Composition
+export interface CompositionResource {
+    resourceType: "Composition";
+    identifier?: Identifier;
+    status: string; // code
+    type: CodeableConcept;
+    category?: CodeableConcept[];
+    subject?: Reference;
+    encounter?: Reference;
+    date: string; // dateTime
+    author: Reference[];
+    title: string;
+    confidentiality?: string; // code
+    attester?: CompositionAttester[];
+    custodian?: Reference;
+    relatesTo?: CompositionRelatesTo[];
+    event?: CompositionEvent[];
+    section?: CompositionSection[];
+}
+
+interface CompositionAttester {
+    mode: string; // code
+    time?: string; // dateTime
+    party?: Reference;
+}
+
+interface CompositionRelatesTo {
+    code: string; // code
+    targetIdentifier?: Identifier;
+    targetReference: Reference;
+}
+
+interface CompositionEvent {
+    code?: CodeableConcept[];
+    period?: Period;
+    detail?: Reference[];
+}
+
+interface CompositionSection {
+    title?: string;
+    code?: CodeableConcept;
+    author?: Reference[];
+    focus?: Reference;
+    text?: Narrative; // Narrative is defined in interfaceFHIR.ts
+    mode?: string; // code
+    orderedBy?: CodeableConcept;
+    entry?: Reference[];
+    emptyReason?: CodeableConcept;
+    section?: CompositionSection[]; // For nested sections
+}
+
+// Procedure
+export interface ProcedureResource {
+    resourceType: "Procedure";
+    identifier?: Identifier[];
+    instantiatesCanonical?: string[]; // canonical[]
+    instantiatesUri?: string[]; // uri[]
+    basedOn?: Reference[];
+    partOf?: Reference[];
+    status: string; // code
+    statusReason?: CodeableConcept;
+    category?: CodeableConcept;
+    code?: CodeableConcept;
+    subject: Reference;
+    encounter?: Reference;
+    performedDateTime?: string; // dateTime
+    performedPeriod?: Period;
+    recorder?: Reference;
+    asserter?: Reference;
+    performer?: ProcedurePerformer[];
+    location?: Reference;
+    reasonCode?: CodeableConcept[];
+    reasonReference?: Reference[];
+    bodySite?: CodeableConcept[];
+    outcome?: CodeableConcept;
+    report?: Reference[];
+    complication?: CodeableConcept[];
+    complicationDetail?: Reference[];
+    followUp?: CodeableConcept[];
+    note?: Annotation[];
+    focalDevice?: {
+        action?: CodeableConcept;
+        manipulated: Reference;
+    }[];
+    usedReference?: Reference[];
+    usedCode?: CodeableConcept[];
+}
+
+interface ProcedurePerformer {
+    function?: CodeableConcept;
+    actor: Reference;
+    onBehalfOf?: Reference;
+}
+
+// Goal
+export interface GoalResource {
+    resourceType: "Goal";
+    identifier?: Identifier[];
+    lifecycleStatus: string; // code
+    achievementStatus?: CodeableConcept;
+    category?: CodeableConcept[];
+    priority?: CodeableConcept;
+    description: CodeableConcept; // description.text is used in the example
+    subject: Reference;
+    startDate?: string; // date
+    startCodeableConcept?: CodeableConcept;
+    target?: GoalTarget[];
+    statusDate?: string; // date
+    statusReason?: string;
+    expressedBy?: Reference;
+    addresses?: Reference[];
+    note?: Annotation[];
+    outcomeCode?: CodeableConcept[];
+    outcomeReference?: Reference[];
+}
+
+interface GoalTarget {
+    measure?: CodeableConcept;
+    detailQuantity?: Quantity;
+    detailRange?: Range;
+    detailCodeableConcept?: CodeableConcept;
+    detailString?: string;
+    detailBoolean?: boolean;
+    detailInteger?: number;
+    detailRatio?: Ratio;
+    dueDate?: string; // date
+    dueDuration?: Duration;
+}
+
+// NutritionOrder
+export interface NutritionOrderResource {
+    resourceType: "NutritionOrder";
+    identifier?: Identifier[];
+    instantiatesCanonical?: string[]; // canonical[]
+    instantiatesUri?: string[]; // uri[]
+    instantiates?: string[]; // uri[]
+    status: string; // code
+    intent: string; // code
+    patient: Reference;
+    encounter?: Reference;
+    dateTime: string; // dateTime
+    orderer?: Reference;
+    allergyIntolerance?: Reference[];
+    foodPreferenceModifier?: CodeableConcept[];
+    excludeFoodModifier?: CodeableConcept[];
+    oralDiet?: NutritionOrderOralDiet;
+    // Other types like supplement, enteralFormula are omitted for brevity based on current usage
+}
+
+interface NutritionOrderOralDiet {
+    type?: CodeableConcept[];
+    schedule?: Timing[];
+    nutrient?: NutritionOrderNutrient[];
+    texture?: { modifier?: CodeableConcept; foodType?: CodeableConcept }[];
+    fluidConsistencyType?: CodeableConcept[];
+    instruction?: string;
+}
+
+interface NutritionOrderNutrient {
+    // Already defined in interfaceValidation.ts for NutritionOrder, ensure it's consistent or use existing
+    modifier?: CodeableConcept;
+    amount?: SimpleQuantity;
 }
