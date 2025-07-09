@@ -2,8 +2,6 @@ import db from "./dbConnect";
 
 export default async function dapatkanDataKondisiPasien(
     pendaftaranID: string,
-    waktuAwal: string,
-    waktuAkhir: string,
 ): Promise<any[] | Error> {
     try {
         const result = await db.query(
@@ -35,12 +33,12 @@ export default async function dapatkanDataKondisiPasien(
                     AND COALESCE ( t_pendaftaran.pendaftaran_uuid, '' ) <> '' 
                     AND COALESCE ( m_pasien.pasien_fhir_id, '' ) <> '' 
                     AND t_pendaftaran.pendaftaran_no = $1
-                    AND to_char( t_pendaftaran.pendaftaran_mrs, 'DD-MM-YYYY HH24:MM:SS' ) >= $2
-                    AND to_char( t_pendaftaran.pendaftaran_mrs, 'DD-MM-YYYY HH24:MM:SS' ) <= $3
+                    -- AND to_char( t_pendaftaran.pendaftaran_mrs, 'DD-MM-YYYY HH24:MM:SS' ) >= $2
+                    -- AND to_char( t_pendaftaran.pendaftaran_mrs, 'DD-MM-YYYY HH24:MM:SS' ) <= $3
                 ORDER BY
                     t_pendaftaran.pendaftaran_id DESC;
             `,
-            [pendaftaranID, waktuAwal, waktuAkhir],
+            [pendaftaranID],
         );
         return result.rows;
     } catch (err) {

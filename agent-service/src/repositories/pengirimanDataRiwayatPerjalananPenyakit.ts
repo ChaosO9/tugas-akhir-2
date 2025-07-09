@@ -9,8 +9,7 @@ export default async function dapatkanRiwayatPerjalananPenyakit(
     dataMasterPasien: KunjunganRawatInap,
 ): Promise<dataRiwayatPerjalananPenyakit[] | AppError> {
     try {
-        const result = await db.query(
-            `
+        const queryText = `
                 SELECT
                     t_pendaftaran.pendaftaran_uuid AS encounter,
                     m_pasien.pasien_fhir_id AS Patient_id,
@@ -30,19 +29,19 @@ export default async function dapatkanRiwayatPerjalananPenyakit(
                     t_clinical_impression_fhir
                     JOIN m_clinical_impression_status_fhir mcisf ON t_clinical_impression_fhir.status_fhir_id = mcisf.
                     ID JOIN m_clinical_impression_prognosis_fhir mcipf ON t_clinical_impression_fhir.prognosis_fhir_id = mcipf.
-                    ID JOIN t_diagnosa_pasien ON t_clinical_impression_fhir.t_diagnosapasien_id= t_diagnosa_pasien.t_pendaftaran_id 
+                    ID JOIN t_diagnosa_pasien ON t_clinical_impression_fhir.pendaftaran_id = t_diagnosa_pasien.t_pendaftaran_id 
                     AND t_diagnosa_pasien.diagnosapasien_aktif = 'y'
                     JOIN m_icd ON t_diagnosa_pasien.m_icd_id = m_icd.icd_id
-                    JOIN t_pendaftaran ON t_pendaftaran.pendaftaran_id = t_clinical_impression_fhir.t_diagnosapasien_id
+                    JOIN t_pendaftaran ON t_pendaftaran.pendaftaran_id = t_clinical_impression_fhir.pendaftaran_id
                     JOIN m_pasien ON m_pasien.pasien_id = t_pendaftaran.m_pasien_id
                     JOIN m_pegawai ON m_pegawai.pegawai_id = t_pendaftaran.pendaftaran_dokter 
                 WHERE
                     t_pendaftaran.pendaftaran_aktif = 'y' 
-                    AND t_pendaftaran.pendaftaran_krs IS NOT NULL 
+                    -- 	AND t_pendaftaran.pendaftaran_krs IS NOT NULL 
                     AND COALESCE ( t_pendaftaran.pendaftaran_uuid, '' ) <> '' 
                     AND COALESCE ( m_pasien.pasien_fhir_id, '' ) <> '' 
                     AND COALESCE ( m_pegawai.pegawai_fhir_id, '' ) <> '' 
-                    AND pendaftaran_no = '${dataMasterPasien.registration_id}' 
+                    AND pendaftaran_no = $1
                 GROUP BY
                     t_clinical_impression_fhir.no_uuid,
                     t_clinical_impression_fhir.deskripsi,
@@ -57,8 +56,9 @@ export default async function dapatkanRiwayatPerjalananPenyakit(
                     m_pasien.pasien_nama,
                     m_pegawai.pegawai_fhir_id,
                     m_pegawai.pegawai_nama
-            `,
-        );
+            `;
+        const values = [dataMasterPasien.registration_id];
+        const result = await db.query(queryText, values);
         return result.rows as dataRiwayatPerjalananPenyakit[];
     } catch (err) {
         console.error("Error fetching disease history data:", err);

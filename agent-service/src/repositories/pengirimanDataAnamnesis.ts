@@ -4,8 +4,6 @@ import db from "./dbConnect";
 
 export default async function dapatkanDataAnamnesis(
     dataMasterPasien: KunjunganRawatInap,
-    waktuAwal: string,
-    waktuAkhir: string,
 ): Promise<dataAnamnesis | AppError> {
     try {
         const conditionQueryText = `
@@ -37,16 +35,12 @@ export default async function dapatkanDataAnamnesis(
                         AND COALESCE ( t_pendaftaran.pendaftaran_uuid, '' ) <> '' 
                         AND COALESCE ( m_pasien.pasien_fhir_id, '' ) <> '' 
                         AND t_pendaftaran.pendaftaran_no = $1
-                        AND to_char( t_pendaftaran.pendaftaran_mrs, 'DD-MM-YYYY HH24:MM:SS' ) >= $2
-                        AND to_char( t_pendaftaran.pendaftaran_mrs, 'DD-MM-YYYY HH24:MM:SS' ) <= $3
+                        -- AND to_char( t_pendaftaran.pendaftaran_mrs, 'DD-MM-YYYY HH24:MM:SS' ) >= $2
+                        -- AND to_char( t_pendaftaran.pendaftaran_mrs, 'DD-MM-YYYY HH24:MM:SS' ) <= $3
                     ORDER BY
                         t_pendaftaran.pendaftaran_id DESC;
             `;
-        const conditionValues = [
-            dataMasterPasien.registration_id,
-            waktuAwal,
-            waktuAkhir,
-        ];
+        const conditionValues = [dataMasterPasien.registration_id];
 
         const allergyQueryText = `
                     SELECT
