@@ -1,6 +1,6 @@
 node_modules/
 agent-service/app/job_files
-agent-service/agent-service/app/job_files
+*/**/job_files*
 sender-service/data
 *.env
 .env
